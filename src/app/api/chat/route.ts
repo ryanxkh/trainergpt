@@ -7,17 +7,21 @@ import {
   exercises,
   exerciseSets,
   workoutSessions,
-  users,
-  userVolumeLandmarks,
 } from "@/lib/db/schema";
-import { eq, desc, sql, and, gte, ilike } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { getCachedVolume, getCachedProfile, getDeloadRecommendation } from "@/lib/cache";
+import { eq, desc, and, ilike, sql } from "drizzle-orm";
+import { requireUserId } from "@/lib/auth-utils";
+import {
+  getCachedVolume,
+  getCachedProfile,
+  getCachedExercises,
+  getDeloadRecommendation,
+  invalidateCache,
+} from "@/lib/cache";
 import { aiModel, enableAdvancedCoaching } from "@/lib/flags";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const userId = session?.user?.id ? parseInt(session.user.id as string) : 1;
+  const userId = await requireUserId();
 
   // Feature flags — resolved from Edge Config (no redeploy needed)
   const [modelId, advancedCoaching] = await Promise.all([
@@ -54,7 +58,6 @@ export async function POST(req: Request) {
             .describe("Number of recent sessions to retrieve"),
         }),
         execute: async ({ muscleGroup, exerciseName, lastNSessions }) => {
-          // Get recent workout sessions for this user
           const sessions = await db.query.workoutSessions.findMany({
             where: eq(workoutSessions.userId, userId),
             orderBy: [desc(workoutSessions.date)],
@@ -68,35 +71,37 @@ export async function POST(req: Request) {
             },
           });
 
-          // Filter sets by muscle group or exercise name if specified
           const filtered = sessions.map((session) => ({
             id: session.id,
             date: session.date,
             sessionName: session.sessionName,
             preReadiness: session.preReadiness,
-            sets: session.sets.filter((set) => {
-              if (exerciseName) {
-                return set.exercise.name
-                  .toLowerCase()
-                  .includes(exerciseName.toLowerCase());
-              }
-              if (muscleGroup) {
-                const mg = set.exercise.muscleGroups;
-                return (
-                  mg.primary.includes(muscleGroup.toLowerCase()) ||
-                  mg.secondary.includes(muscleGroup.toLowerCase())
-                );
-              }
-              return true;
-            }).map((set) => ({
-              exercise: set.exercise.name,
-              setNumber: set.setNumber,
-              weight: set.weight,
-              reps: set.reps,
-              rir: set.rir,
-              rpe: set.rpe,
-              restSeconds: set.restSeconds,
-            })),
+            sets: session.sets
+              .filter((set) => {
+                if (exerciseName) {
+                  return set.exercise.name
+                    .toLowerCase()
+                    .includes(exerciseName.toLowerCase());
+                }
+                if (muscleGroup) {
+                  const mg = set.exercise.muscleGroups as {
+                    primary: string[];
+                    secondary: string[];
+                  };
+                  return (
+                    mg.primary.includes(muscleGroup.toLowerCase()) ||
+                    mg.secondary.includes(muscleGroup.toLowerCase())
+                  );
+                }
+                return true;
+              })
+              .map((set) => ({
+                exercise: set.exercise.name,
+                setNumber: set.setNumber,
+                weight: set.weight,
+                reps: set.reps,
+                rir: set.rir,
+              })),
           }));
 
           return {
@@ -119,12 +124,9 @@ export async function POST(req: Request) {
         }),
         execute: async ({ muscleGroup }) => {
           const volume = await getCachedVolume(userId);
-
-          // Also get landmarks for comparison
           const profile = await getCachedProfile(userId);
           const landmarks = profile?.volumeLandmarks ?? {};
 
-          // Filter to specific muscle group if requested
           if (muscleGroup) {
             const group = muscleGroup.toLowerCase();
             return {
@@ -146,7 +148,7 @@ export async function POST(req: Request) {
 
       getProgressionTrend: tool({
         description:
-          "Analyze the progression trend for a specific exercise over recent sessions. Returns weight, reps, and RPE changes to determine if the user should increase load.",
+          "Analyze the progression trend for a specific exercise over recent sessions. Returns weight, reps, and RIR changes to determine if the user should increase load.",
         inputSchema: z.object({
           exerciseName: z.string().describe("Exercise name to analyze"),
           lastNSessions: z
@@ -155,7 +157,6 @@ export async function POST(req: Request) {
             .describe("Number of sessions to analyze"),
         }),
         execute: async ({ exerciseName, lastNSessions }) => {
-          // Find the exercise by name (fuzzy match)
           const matchingExercises = await db.query.exercises.findMany({
             where: ilike(exercises.name, `%${exerciseName}%`),
             limit: 1,
@@ -170,7 +171,6 @@ export async function POST(req: Request) {
 
           const exercise = matchingExercises[0];
 
-          // Get recent sets for this exercise, grouped by session
           const recentSets = await db
             .select({
               sessionId: workoutSessions.id,
@@ -179,7 +179,6 @@ export async function POST(req: Request) {
               weight: exerciseSets.weight,
               reps: exerciseSets.reps,
               rir: exerciseSets.rir,
-              rpe: exerciseSets.rpe,
             })
             .from(exerciseSets)
             .innerJoin(
@@ -194,12 +193,16 @@ export async function POST(req: Request) {
             )
             .orderBy(desc(workoutSessions.date), exerciseSets.setNumber);
 
-          // Group by session
           const sessionMap = new Map<
             number,
             {
               date: Date;
-              sets: { setNumber: number; weight: number; reps: number; rir: number | null; rpe: number | null }[];
+              sets: {
+                setNumber: number;
+                weight: number;
+                reps: number;
+                rir: number | null;
+              }[];
             }
           >();
           for (const row of recentSets) {
@@ -214,11 +217,9 @@ export async function POST(req: Request) {
               weight: row.weight,
               reps: row.reps,
               rir: row.rir,
-              rpe: row.rpe,
             });
           }
 
-          // Convert to array, limit to lastNSessions
           const trend = Array.from(sessionMap.values())
             .slice(0, lastNSessions)
             .map((session) => ({
@@ -239,7 +240,6 @@ export async function POST(req: Request) {
                   : null,
             }));
 
-          // Generate recommendation
           let recommendation: string | null = null;
           if (trend.length >= 2) {
             const latest = trend[0];
@@ -252,10 +252,7 @@ export async function POST(req: Request) {
               latest.avgRir <= 2
             ) {
               recommendation = `User hit top of rep range (${repRange[1]}) at ≤2 RIR. Recommend increasing weight by 2.5-5% next session.`;
-            } else if (
-              latest.avgRir !== null &&
-              latest.avgRir >= 3
-            ) {
+            } else if (latest.avgRir !== null && latest.avgRir >= 3) {
               recommendation = `User at ${latest.avgRir.toFixed(1)} RIR — still has room. Maintain weight and push closer to failure.`;
             } else if (
               latest.avgReps < repRange[0] &&
@@ -292,12 +289,224 @@ export async function POST(req: Request) {
             };
           }
 
-          // Also include deload recommendation if available
           const deload = await getDeloadRecommendation(userId);
 
           return {
             ...profile,
             deloadRecommendation: deload,
+          };
+        },
+      }),
+
+      getExerciseLibrary: tool({
+        description:
+          "Search the exercise library by muscle group, name, or equipment. Returns exercise IDs needed for prescribing workouts. Always call this before prescribeWorkout to get valid exercise IDs.",
+        inputSchema: z.object({
+          muscleGroup: z
+            .string()
+            .optional()
+            .describe(
+              "Filter by primary muscle group (e.g. chest, back, quads, hamstrings, glutes, biceps, triceps, side_delts, rear_delts, front_delts, calves, abs, traps, forearms)"
+            ),
+          searchTerm: z
+            .string()
+            .optional()
+            .describe("Search by exercise name (partial match)"),
+          equipment: z
+            .string()
+            .optional()
+            .describe(
+              "Filter by equipment (barbell, dumbbell, cable, machine, bodyweight)"
+            ),
+        }),
+        execute: async ({ muscleGroup, searchTerm, equipment }) => {
+          const allExercises = await getCachedExercises();
+
+          let filtered = allExercises;
+
+          if (muscleGroup) {
+            const group = muscleGroup.toLowerCase();
+            filtered = filtered.filter((e) =>
+              e.muscleGroups.primary.includes(group)
+            );
+          }
+
+          if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter((e) =>
+              e.name.toLowerCase().includes(term)
+            );
+          }
+
+          if (equipment) {
+            const eq = equipment.toLowerCase();
+            filtered = filtered.filter(
+              (e) => e.equipment.toLowerCase() === eq
+            );
+          }
+
+          return {
+            exercises: filtered.map((e) => ({
+              id: e.id,
+              name: e.name,
+              muscleGroups: e.muscleGroups,
+              equipment: e.equipment,
+              movementPattern: e.movementPattern,
+            })),
+            count: filtered.length,
+          };
+        },
+      }),
+
+      prescribeWorkout: tool({
+        description:
+          "Create a new workout session with prescribed exercises. Call getExerciseLibrary first to get valid exercise IDs. Returns the session ID.",
+        inputSchema: z.object({
+          sessionName: z
+            .string()
+            .describe(
+              "Name for the workout session (e.g. 'Upper Body A', 'Push Day', 'Legs')"
+            ),
+          exercises: z
+            .array(
+              z.object({
+                exerciseId: z
+                  .number()
+                  .describe("Exercise ID from the exercise library"),
+                exerciseName: z
+                  .string()
+                  .describe("Exercise name for display"),
+                targetSets: z
+                  .number()
+                  .describe("Number of sets to perform (typically 2-5)"),
+                repRangeMin: z
+                  .number()
+                  .describe("Minimum reps per set"),
+                repRangeMax: z
+                  .number()
+                  .describe("Maximum reps per set"),
+                rirTarget: z
+                  .number()
+                  .describe("Target RIR (Reps in Reserve, typically 1-3)"),
+                restSeconds: z
+                  .number()
+                  .describe(
+                    "Rest between sets in seconds (60-300)"
+                  ),
+              })
+            )
+            .describe("Array of exercises to prescribe"),
+        }),
+        execute: async ({ sessionName, exercises: prescribedExercises }) => {
+          const [session] = await db
+            .insert(workoutSessions)
+            .values({
+              userId,
+              sessionName,
+              date: new Date(),
+              prescribedExercises,
+            })
+            .returning();
+
+          revalidatePath("/workout", "page");
+
+          return {
+            sessionId: session.id,
+            sessionName: session.sessionName,
+            exerciseCount: prescribedExercises.length,
+            totalSets: prescribedExercises.reduce(
+              (sum, e) => sum + e.targetSets,
+              0
+            ),
+            message:
+              "Workout created! Head to the Today tab to start logging sets.",
+          };
+        },
+      }),
+
+      logWorkoutSet: tool({
+        description:
+          "Log a completed set for an exercise in the user's active workout session. Finds the active session automatically. Use when the user reports completing a set.",
+        inputSchema: z.object({
+          exerciseName: z
+            .string()
+            .describe(
+              "Exercise name (fuzzy match — e.g. 'bench' matches 'Barbell Bench Press')"
+            ),
+          weight: z.number().describe("Weight used in lbs"),
+          reps: z.number().describe("Number of reps completed"),
+          rir: z
+            .number()
+            .optional()
+            .describe("Reps in Reserve (0-5)"),
+        }),
+        execute: async ({ exerciseName, weight, reps, rir }) => {
+          // Find active session (no durationMinutes = still in progress)
+          const activeSessions = await db.query.workoutSessions.findMany({
+            where: eq(workoutSessions.userId, userId),
+            orderBy: [desc(workoutSessions.date)],
+            limit: 1,
+          });
+
+          const activeSession = activeSessions[0];
+          if (!activeSession || activeSession.durationMinutes !== null) {
+            return {
+              success: false,
+              error:
+                "No active workout session. Ask me to prescribe a workout first.",
+            };
+          }
+
+          // Find exercise by name (fuzzy match)
+          const matchingExercises = await db.query.exercises.findMany({
+            where: ilike(exercises.name, `%${exerciseName}%`),
+            limit: 1,
+          });
+
+          if (matchingExercises.length === 0) {
+            return {
+              success: false,
+              error: `No exercise found matching "${exerciseName}". Try a more specific name.`,
+            };
+          }
+
+          const exercise = matchingExercises[0];
+
+          // Calculate set number (count existing sets for this exercise in this session)
+          const existingSets = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(exerciseSets)
+            .where(
+              and(
+                eq(exerciseSets.sessionId, activeSession.id),
+                eq(exerciseSets.exerciseId, exercise.id)
+              )
+            );
+
+          const setNumber = (existingSets[0]?.count ?? 0) + 1;
+
+          const [newSet] = await db
+            .insert(exerciseSets)
+            .values({
+              sessionId: activeSession.id,
+              exerciseId: exercise.id,
+              setNumber,
+              weight,
+              reps,
+              rir: rir ?? null,
+            })
+            .returning();
+
+          await invalidateCache(userId, ["volume"]);
+          revalidatePath("/workout", "page");
+
+          return {
+            success: true,
+            exercise: exercise.name,
+            setNumber,
+            weight,
+            reps,
+            rir: rir ?? null,
           };
         },
       }),

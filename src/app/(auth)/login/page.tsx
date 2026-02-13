@@ -20,7 +20,7 @@ export default function LoginPage() {
           <form
             action={async () => {
               "use server";
-              await signIn("github", { redirectTo: "/dashboard" });
+              await signIn("github", { redirectTo: "/coach" });
             }}
           >
             <Button variant="default" size="lg" className="w-full">

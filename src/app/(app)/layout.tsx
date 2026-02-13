@@ -2,9 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import {
   Dumbbell,
-  LayoutDashboard,
   MessageSquare,
-  Calendar,
   History,
   LogOut,
   BookOpen,
@@ -14,11 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/workout", label: "Workout", icon: Dumbbell },
-  { href: "/program", label: "Program", icon: Calendar },
-  { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/coach", label: "Coach", icon: MessageSquare },
+  { href: "/workout", label: "Today", icon: Dumbbell },
+  { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/history", label: "History", icon: History },
 ];
 
@@ -57,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="hidden w-64 border-r bg-muted/40 md:block">
         <div className="flex h-14 items-center border-b px-4">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold">
+          <Link href="/coach" className="flex items-center gap-2 font-bold">
             <Dumbbell className="h-6 w-6" />
             <span>TrainerGPT</span>
           </Link>

@@ -113,6 +113,15 @@ export const workoutSessions = pgTable("workout_sessions", {
     sleepHours: number;
   }>(),
   postNotes: text("post_notes"),
+  prescribedExercises: jsonb("prescribed_exercises").$type<{
+    exerciseId: number;
+    exerciseName: string;
+    targetSets: number;
+    repRangeMin: number;
+    repRangeMax: number;
+    rirTarget: number;
+    restSeconds: number;
+  }[]>(),
   durationMinutes: integer("duration_minutes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

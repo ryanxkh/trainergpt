@@ -98,17 +98,17 @@ export default function CoachClient() {
                   const toolPart = part as unknown as {
                     type: string;
                     toolCallId: string;
-                    toolName?: string;
                     state: string;
                     output?: unknown;
                   };
+                  const toolName = toolPart.type.replace(/^tool-/, "");
                   return (
                     <ToolResultCard
                       key={i}
-                      toolName={toolPart.toolName ?? "unknown"}
+                      toolName={toolName}
                       state={toolPart.state}
                       result={
-                        toolPart.state === "result"
+                        toolPart.state === "output-available"
                           ? toolPart.output
                           : undefined
                       }
@@ -181,7 +181,7 @@ function ToolResultCard({
   state: string;
   result?: unknown;
 }) {
-  if (state !== "result") {
+  if (state !== "output-available") {
     const labels: Record<string, string> = {
       getWorkoutHistory: "Checking workout history...",
       getVolumeThisWeek: "Checking volume...",

@@ -323,6 +323,26 @@ export const EVAL_SCENARIOS: CoachEval[] = [
     },
   },
 
+  {
+    id: "edge-005",
+    name: "Adjacent topic — HIIT request handled with curiosity",
+    description:
+      "When the user asks about HIIT or cardio, the coach should seek to understand their goal rather than dismissing the topic or making absolute physiological claims.",
+    category: "edge-case",
+    fixtures: STANDARD_INTERMEDIATE,
+    userMessages: ["Can you write me a HIIT workout?"],
+    expectations: {
+      toolsCalled: [],
+      toolsNotCalled: ["prescribeWorkout"],
+      policyAssertions: [
+        "The coach did NOT make an absolute claim that HIIT 'won't build muscle' or 'can't build muscle'",
+        "The coach asked about the user's underlying goal (fat loss, conditioning, general fitness, etc.) before redirecting",
+        "The coach acknowledged the user's interest rather than immediately dismissing HIIT",
+        "The coach was honest about its primary expertise being resistance training without being dismissive of the user's question",
+      ],
+    },
+  },
+
   // ═══════════════════════════════════════════════════════════════════
   // COMMUNICATION QUALITY
   // ═══════════════════════════════════════════════════════════════════

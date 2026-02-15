@@ -71,41 +71,65 @@ export async function POST(req: Request) {
             },
           });
 
-          const filtered = sessions.map((session) => ({
-            id: session.id,
-            date: session.date,
-            sessionName: session.sessionName,
-            preReadiness: session.preReadiness,
-            sets: session.sets
-              .filter((set) => {
-                if (exerciseName) {
-                  return set.exercise.name
-                    .toLowerCase()
-                    .includes(exerciseName.toLowerCase());
-                }
-                if (muscleGroup) {
-                  const mg = set.exercise.muscleGroups as {
-                    primary: string[];
-                    secondary: string[];
-                  };
-                  return (
-                    mg.primary.includes(muscleGroup.toLowerCase()) ||
-                    mg.secondary.includes(muscleGroup.toLowerCase())
-                  );
-                }
-                return true;
+          // Return per-session summaries instead of raw sets (reduces tokens ~60%)
+          const summaries = sessions.map((session) => {
+            const relevantSets = session.sets.filter((set) => {
+              if (exerciseName) {
+                return set.exercise.name
+                  .toLowerCase()
+                  .includes(exerciseName.toLowerCase());
+              }
+              if (muscleGroup) {
+                const mg = set.exercise.muscleGroups as {
+                  primary: string[];
+                  secondary: string[];
+                };
+                return (
+                  mg.primary.includes(muscleGroup.toLowerCase()) ||
+                  mg.secondary.includes(muscleGroup.toLowerCase())
+                );
+              }
+              return true;
+            });
+
+            // Group sets by exercise for summary
+            const exerciseMap = new Map<string, { weights: number[]; reps: number[]; rirs: number[] }>();
+            for (const set of relevantSets) {
+              const name = set.exercise.name;
+              if (!exerciseMap.has(name)) {
+                exerciseMap.set(name, { weights: [], reps: [], rirs: [] });
+              }
+              const entry = exerciseMap.get(name)!;
+              entry.weights.push(set.weight);
+              entry.reps.push(set.reps);
+              if (set.rir !== null) entry.rirs.push(set.rir);
+            }
+
+            const exerciseSummaries = Array.from(exerciseMap.entries()).map(
+              ([name, data]) => ({
+                exercise: name,
+                sets: data.weights.length,
+                avgWeight: Math.round(data.weights.reduce((s, v) => s + v, 0) / data.weights.length),
+                avgReps: +(data.reps.reduce((s, v) => s + v, 0) / data.reps.length).toFixed(1),
+                avgRir: data.rirs.length > 0
+                  ? +(data.rirs.reduce((s, v) => s + v, 0) / data.rirs.length).toFixed(1)
+                  : null,
               })
-              .map((set) => ({
-                exercise: set.exercise.name,
-                setNumber: set.setNumber,
-                weight: set.weight,
-                reps: set.reps,
-                rir: set.rir,
-              })),
-          }));
+            );
+
+            return {
+              id: session.id,
+              date: session.date,
+              sessionName: session.sessionName,
+              preReadiness: session.preReadiness,
+              exerciseCount: exerciseSummaries.length,
+              totalSets: relevantSets.length,
+              exercises: exerciseSummaries,
+            };
+          });
 
           return {
-            sessions: filtered,
+            sessions: summaries,
             totalSessions: sessions.length,
           };
         },
@@ -127,22 +151,45 @@ export async function POST(req: Request) {
           const profile = await getCachedProfile(userId);
           const landmarks = profile?.volumeLandmarks ?? {};
 
-          if (muscleGroup) {
-            const group = muscleGroup.toLowerCase();
+          // Build comparison with computed status and setsRemaining
+          function buildComparison(group: string, sets: number) {
+            const lm = landmarks[group];
+            if (!lm) return { sets, status: "no_landmarks" as const, setsRemaining: null };
+            const status =
+              sets < lm.mev ? "below_mev" as const :
+              sets < lm.mav ? "at_mev" as const :
+              sets <= lm.mrv ? "in_range" as const :
+              "above_mrv" as const;
             return {
-              volumeByGroup: { [group]: volume.volumeByGroup[group] || 0 },
-              landmarks: landmarks[group]
-                ? { [group]: landmarks[group] }
-                : {},
-              weekStart: volume.weekStart,
+              sets,
+              mev: lm.mev,
+              mav: lm.mav,
+              mrv: lm.mrv,
+              status,
+              setsRemaining: Math.max(0, lm.mrv - sets),
             };
           }
 
-          return {
-            volumeByGroup: volume.volumeByGroup,
-            landmarks,
-            weekStart: volume.weekStart,
-          };
+          if (muscleGroup) {
+            const group = muscleGroup.toLowerCase();
+            const sets = volume.volumeByGroup[group] || 0;
+            return {
+              weekStart: volume.weekStart,
+              muscleGroups: { [group]: buildComparison(group, sets) },
+            };
+          }
+
+          const muscleGroups: Record<string, ReturnType<typeof buildComparison>> = {};
+          // Include all groups that have volume or landmarks
+          const allGroups = new Set([
+            ...Object.keys(volume.volumeByGroup),
+            ...Object.keys(landmarks),
+          ]);
+          for (const group of allGroups) {
+            muscleGroups[group] = buildComparison(group, volume.volumeByGroup[group] || 0);
+          }
+
+          return { weekStart: volume.weekStart, muscleGroups };
         },
       }),
 
@@ -220,23 +267,26 @@ export async function POST(req: Request) {
             });
           }
 
+          // Return only per-session averages, not raw sets (reduces context pollution)
           const trend = Array.from(sessionMap.values())
             .slice(0, lastNSessions)
             .map((session) => ({
               date: session.date,
-              sets: session.sets,
-              avgWeight:
+              setCount: session.sets.length,
+              avgWeight: Math.round(
                 session.sets.reduce((sum, s) => sum + s.weight, 0) /
-                session.sets.length,
-              avgReps:
+                session.sets.length
+              ),
+              avgReps: +(
                 session.sets.reduce((sum, s) => sum + s.reps, 0) /
-                session.sets.length,
+                session.sets.length
+              ).toFixed(1),
               avgRir:
                 session.sets.filter((s) => s.rir !== null).length > 0
-                  ? session.sets
+                  ? +(session.sets
                       .filter((s) => s.rir !== null)
                       .reduce((sum, s) => sum + s.rir!, 0) /
-                    session.sets.filter((s) => s.rir !== null).length
+                    session.sets.filter((s) => s.rir !== null).length).toFixed(1)
                   : null,
             }));
 
@@ -345,13 +395,13 @@ export async function POST(req: Request) {
             );
           }
 
+          // Return only id, name, equipment — coach already knows muscle groups
+          // from the search filter (~58% token reduction)
           return {
             exercises: filtered.map((e) => ({
               id: e.id,
               name: e.name,
-              muscleGroups: e.muscleGroups,
               equipment: e.equipment,
-              movementPattern: e.movementPattern,
             })),
             count: filtered.length,
           };
@@ -398,6 +448,62 @@ export async function POST(req: Request) {
             .describe("Array of exercises to prescribe"),
         }),
         execute: async ({ sessionName, exercises: prescribedExercises }) => {
+          // ── Verification step: validate before inserting ──
+
+          // 1. Validate exercise IDs exist
+          const exerciseIds = prescribedExercises.map((e) => e.exerciseId);
+          const validExercises = await db.query.exercises.findMany({
+            where: sql`${exercises.id} = ANY(ARRAY[${sql.raw(exerciseIds.join(","))}]::int[])`,
+          });
+          const validIds = new Set(validExercises.map((e) => e.id));
+          const invalidIds = exerciseIds.filter((id) => !validIds.has(id));
+          if (invalidIds.length > 0) {
+            return {
+              success: false,
+              error: `Invalid exercise IDs: ${invalidIds.join(", ")}. Call getExerciseLibrary to get valid IDs.`,
+            };
+          }
+
+          // 2. Check volume vs MRV — compute new volume per muscle group
+          const volume = await getCachedVolume(userId);
+          const profile = await getCachedProfile(userId);
+          const landmarks = profile?.volumeLandmarks ?? {};
+
+          const newVolume: Record<string, number> = {};
+          for (const prescribed of prescribedExercises) {
+            const ex = validExercises.find((e) => e.id === prescribed.exerciseId);
+            if (!ex) continue;
+            const mg = ex.muscleGroups as { primary: string[]; secondary: string[] };
+            for (const group of mg.primary) {
+              newVolume[group] = (newVolume[group] || 0) + prescribed.targetSets;
+            }
+            // Compound secondary counts 50%
+            for (const group of mg.secondary) {
+              newVolume[group] = (newVolume[group] || 0) + Math.ceil(prescribed.targetSets * 0.5);
+            }
+          }
+
+          const violations: string[] = [];
+          for (const [group, newSets] of Object.entries(newVolume)) {
+            const lm = landmarks[group];
+            if (!lm) continue;
+            const currentSets = volume.volumeByGroup[group] || 0;
+            const totalSets = currentSets + newSets;
+            if (totalSets > lm.mrv) {
+              violations.push(
+                `${group}: ${currentSets} existing + ${newSets} new = ${totalSets} sets (MRV: ${lm.mrv})`
+              );
+            }
+          }
+
+          if (violations.length > 0) {
+            return {
+              success: false,
+              error: `This workout would exceed MRV for: ${violations.join("; ")}. Reduce sets or choose different muscle groups.`,
+            };
+          }
+
+          // ── All checks passed — create the session ──
           const [session] = await db
             .insert(workoutSessions)
             .values({
@@ -411,6 +517,7 @@ export async function POST(req: Request) {
           revalidatePath("/workout", "page");
 
           return {
+            success: true,
             sessionId: session.id,
             sessionName: session.sessionName,
             exerciseCount: prescribedExercises.length,
@@ -511,7 +618,7 @@ export async function POST(req: Request) {
         },
       }),
     },
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(7),
   });
 
   return result.toUIMessageStreamResponse();

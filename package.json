@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "eval": "npx tsx evals/runner.ts",
+    "eval:policy": "npx tsx evals/runner.ts --category policy",
+    "eval:tools": "npx tsx evals/runner.ts --category tool-usage",
+    "eval:edge": "npx tsx evals/runner.ts --category edge-case",
+    "eval:comm": "npx tsx evals/runner.ts --category communication"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.42",

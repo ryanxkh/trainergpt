@@ -49,8 +49,16 @@ import {
   completeWorkout,
   getExerciseList,
   getActiveSession,
+  getPreviousPerformance,
+  getExerciseDetails,
+  getActiveMesocycleContext,
 } from "../actions";
 import PrescribedWorkout from "./prescribed-workout";
+import type {
+  PreviousSetData,
+  ExerciseDetail,
+  MesocycleContext,
+} from "./types";
 
 type Exercise = {
   id: number;
@@ -678,16 +686,27 @@ export default function WorkoutPage({
   const [exerciseList, setExerciseList] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [, startTransition] = useTransition();
+  const [mesocycleContext, setMesocycleContext] =
+    useState<MesocycleContext | null>(null);
+  const [exerciseDetails, setExerciseDetails] = useState<
+    Record<number, ExerciseDetail>
+  >({});
+  const [previousPerformance, setPreviousPerformance] = useState<
+    Record<number, PreviousSetData[]>
+  >({});
 
   useEffect(() => {
     async function load() {
-      const [exercises, activeSession] = await Promise.all([
+      const [exercises, activeSession, mesoCtx] = await Promise.all([
         getExerciseList(),
         getActiveSession(),
+        getActiveMesocycleContext(),
       ]);
       setExerciseList(exercises as Exercise[]);
+      setMesocycleContext(mesoCtx);
+
       if (activeSession) {
-        setSession({
+        const sessionData = {
           ...activeSession,
           prescribedExercises:
             (activeSession as unknown as Session).prescribedExercises ?? null,
@@ -695,7 +714,21 @@ export default function WorkoutPage({
             ...s,
             exercise: s.exercise as Exercise,
           })),
-        } as Session);
+        } as Session;
+        setSession(sessionData);
+
+        // Fetch exercise details and previous performance for prescribed workouts
+        if (sessionData.prescribedExercises?.length) {
+          const exerciseIds = sessionData.prescribedExercises.map(
+            (e) => e.exerciseId
+          );
+          const [details, previous] = await Promise.all([
+            getExerciseDetails(exerciseIds),
+            getPreviousPerformance(exerciseIds, sessionData.id),
+          ]);
+          setExerciseDetails(details);
+          setPreviousPerformance(previous);
+        }
       }
       setLoading(false);
     }
@@ -756,6 +789,9 @@ export default function WorkoutPage({
         }))}
         enableTimer={enableTimer}
         onComplete={handleComplete}
+        mesocycleContext={mesocycleContext}
+        exerciseDetails={exerciseDetails}
+        previousPerformance={previousPerformance}
       />
     );
   }

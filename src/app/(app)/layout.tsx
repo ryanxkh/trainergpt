@@ -1,22 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import {
-  Dumbbell,
-  MessageSquare,
-  History,
-  LogOut,
-  BookOpen,
-} from "lucide-react";
+import { Dumbbell, LogOut } from "lucide-react";
 import { auth, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const navItems = [
-  { href: "/coach", label: "Coach", icon: MessageSquare },
-  { href: "/workout", label: "Today", icon: Dumbbell },
-  { href: "/exercises", label: "Exercises", icon: BookOpen },
-  { href: "/history", label: "History", icon: History },
-];
+import { SidebarNav } from "./_components/sidebar-nav";
+import { MobileNav } from "./_components/mobile-nav";
 
 async function UserSection() {
   const session = await auth();
@@ -50,28 +39,17 @@ async function UserSection() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="hidden w-64 border-r bg-muted/40 md:block">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-64 border-r bg-muted/40 md:flex md:flex-col">
         <div className="flex h-14 items-center border-b px-4">
           <Link href="/coach" className="flex items-center gap-2 font-bold">
             <Dumbbell className="h-6 w-6" />
             <span>TrainerGPT</span>
           </Link>
         </div>
-        <nav className="flex flex-col gap-1 p-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User + Sign Out — dynamic, wrapped in Suspense */}
+        <Suspense>
+          <SidebarNav />
+        </Suspense>
         <Suspense
           fallback={
             <div className="mt-auto border-t p-4">
@@ -86,9 +64,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto p-6">{children}</div>
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        <div className="container mx-auto p-4 md:p-6">{children}</div>
       </main>
+
+      {/* Mobile bottom nav */}
+      <Suspense>
+        <MobileNav />
+      </Suspense>
     </div>
   );
 }

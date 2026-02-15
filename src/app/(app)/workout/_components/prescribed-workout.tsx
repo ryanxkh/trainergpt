@@ -1,41 +1,23 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useTransition, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Check, Timer, CheckCircle2 } from "lucide-react";
-import { logSet, completeWorkout } from "../actions";
-
-type PrescribedExercise = {
-  exerciseId: number;
-  exerciseName: string;
-  targetSets: number;
-  repRangeMin: number;
-  repRangeMax: number;
-  rirTarget: number;
-  restSeconds: number;
-};
-
-type LoggedSet = {
-  id: number;
-  exerciseId: number;
-  setNumber: number;
-  weight: number;
-  reps: number;
-  rir: number | null;
-};
+import { completeWorkout } from "../actions";
+import { MuscleGroupBadge } from "./muscle-group-badge";
+import { RestTimerBanner } from "./rest-timer-banner";
+import { CompletedSetRow, ActiveSetRow, UpcomingSetRow } from "./exercise-set-row";
+import { ExerciseMenu } from "./exercise-menu";
+import type {
+  PrescribedExercise,
+  LoggedSet,
+  PreviousSetData,
+  ExerciseDetail,
+  MesocycleContext,
+} from "./types";
 
 type Props = {
   sessionId: number;
@@ -45,6 +27,9 @@ type Props = {
   initialSets: LoggedSet[];
   enableTimer: boolean;
   onComplete: () => void;
+  mesocycleContext: MesocycleContext | null;
+  exerciseDetails: Record<number, ExerciseDetail>;
+  previousPerformance: Record<number, PreviousSetData[]>;
 };
 
 export default function PrescribedWorkout({
@@ -55,6 +40,9 @@ export default function PrescribedWorkout({
   initialSets,
   enableTimer,
   onComplete,
+  mesocycleContext,
+  exerciseDetails,
+  previousPerformance,
 }: Props) {
   const [loggedSets, setLoggedSets] = useState<LoggedSet[]>(initialSets);
   const [postNotes, setPostNotes] = useState("");
@@ -62,16 +50,25 @@ export default function PrescribedWorkout({
   const [elapsed, setElapsed] = useState("");
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const [restDisplay, setRestDisplay] = useState("");
+  const [skippedExercises, setSkippedExercises] = useState<Set<number>>(
+    new Set()
+  );
+  const [extraSets, setExtraSets] = useState<Record<number, number>>({});
+  const [exerciseNotes, setExerciseNotes] = useState<Record<number, string>>(
+    {}
+  );
 
   // Duration timer
   useEffect(() => {
     const start = new Date(sessionDate).getTime();
-    const interval = setInterval(() => {
+    const tick = () => {
       const diff = Math.floor((Date.now() - start) / 1000);
       const mins = Math.floor(diff / 60);
       const secs = diff % 60;
       setElapsed(`${mins}:${secs.toString().padStart(2, "0")}`);
-    }, 1000);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [sessionDate]);
 
@@ -79,7 +76,7 @@ export default function PrescribedWorkout({
   useEffect(() => {
     if (restTimer === null || !enableTimer) return;
     if (restTimer <= 0) {
-      setRestDisplay("REST DONE");
+      setRestDisplay("GO");
       const timeout = setTimeout(() => {
         setRestTimer(null);
         setRestDisplay("");
@@ -95,33 +92,46 @@ export default function PrescribedWorkout({
     return () => clearInterval(interval);
   }, [restTimer, enableTimer]);
 
-  // Count logged sets per exercise
-  const setsByExercise = loggedSets.reduce(
-    (acc, s) => {
-      acc[s.exerciseId] = (acc[s.exerciseId] || 0) + 1;
-      return acc;
-    },
-    {} as Record<number, number>
+  const setsForExercise = useCallback(
+    (exerciseId: number) =>
+      loggedSets.filter((s) => s.exerciseId === exerciseId),
+    [loggedSets]
   );
 
   const totalLogged = loggedSets.length;
   const totalTarget = prescribedExercises.reduce(
-    (sum, e) => sum + e.targetSets,
+    (sum, e) => sum + e.targetSets + (extraSets[e.exerciseId] || 0),
     0
   );
+  const progress = totalTarget > 0 ? (totalLogged / totalTarget) * 100 : 0;
 
   const handleComplete = () => {
+    // Combine post-workout notes with any exercise-specific notes
+    const allNotes = [
+      postNotes,
+      ...Object.entries(exerciseNotes)
+        .filter(([, note]) => note.trim())
+        .map(([id, note]) => {
+          const ex = prescribedExercises.find(
+            (e) => e.exerciseId === parseInt(id)
+          );
+          return `${ex?.exerciseName ?? "Exercise"}: ${note}`;
+        }),
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const durationMinutes = Math.round(
       (Date.now() - new Date(sessionDate).getTime()) / 60000
     );
     startTransition(async () => {
       const result = await completeWorkout(sessionId, {
-        postNotes: postNotes || undefined,
+        postNotes: allNotes || undefined,
         durationMinutes,
       });
       if (result.success) {
         toast.success(
-          `Workout complete! ${totalLogged} sets in ${durationMinutes} minutes`
+          `Workout complete! ${totalLogged} sets in ${durationMinutes} min`
         );
         onComplete();
       } else {
@@ -130,239 +140,295 @@ export default function PrescribedWorkout({
     });
   };
 
+  const dismissRest = () => {
+    setRestTimer(null);
+    setRestDisplay("");
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{sessionName}</h1>
-          <div className="flex items-center gap-2 mt-1 text-muted-foreground text-sm">
-            <Timer className="h-4 w-4" />
-            <span className="font-mono">{elapsed}</span>
-            <Badge variant="secondary">
-              {totalLogged}/{totalTarget} sets
-            </Badge>
+    <div className="space-y-3">
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            {mesocycleContext && (
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                {mesocycleContext.name} &mdash; Week{" "}
+                {mesocycleContext.currentWeek}
+                {mesocycleContext.totalWeeks
+                  ? ` / ${mesocycleContext.totalWeeks}`
+                  : ""}
+              </p>
+            )}
+            <h1 className="text-xl font-bold tracking-tight leading-tight">
+              {sessionName}
+            </h1>
           </div>
+          <div className="flex items-center gap-3 shrink-0 pt-0.5">
+            <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2.5 py-1">
+              <Timer className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-sm font-mono font-medium tabular-nums">
+                {elapsed}
+              </span>
+            </div>
+            <span className="text-sm font-bold tabular-nums">
+              {totalLogged}
+              <span className="text-muted-foreground font-normal">
+                /{totalTarget}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
         </div>
       </div>
 
-      {/* Rest Timer */}
+      {/* ── Rest Timer Banner ───────────────────────────────── */}
       {enableTimer && restTimer !== null && (
-        <Card
-          className={
-            restTimer <= 0
-              ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-              : "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-          }
-        >
-          <CardContent className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-3">
-              <Timer className="h-5 w-5" />
-              <span className="font-semibold">Rest</span>
-            </div>
-            <span className="text-2xl font-mono font-bold">{restDisplay}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setRestTimer(null);
-                setRestDisplay("");
-              }}
-            >
-              Skip
-            </Button>
-          </CardContent>
-        </Card>
+        <RestTimerBanner
+          restTimer={restTimer}
+          restDisplay={restDisplay}
+          onDismiss={dismissRest}
+        />
       )}
 
-      {/* Prescribed Exercises */}
-      {prescribedExercises.map((exercise) => (
-        <ExerciseCard
-          key={exercise.exerciseId}
-          exercise={exercise}
-          sessionId={sessionId}
-          completedSets={setsByExercise[exercise.exerciseId] || 0}
-          loggedSets={loggedSets.filter(
-            (s) => s.exerciseId === exercise.exerciseId
-          )}
-          onSetLogged={(newSet) => {
-            setLoggedSets((prev) => [...prev, newSet]);
-            if (enableTimer) {
-              setRestTimer(exercise.restSeconds);
-            }
-          }}
-        />
-      ))}
+      {/* ── Exercise Cards ──────────────────────────────────── */}
+      {prescribedExercises.map((exercise) => {
+        const logged = setsForExercise(exercise.exerciseId);
+        const detail = exerciseDetails[exercise.exerciseId];
+        const previous = previousPerformance[exercise.exerciseId];
+        const totalSetsForExercise =
+          exercise.targetSets + (extraSets[exercise.exerciseId] || 0);
+        const isComplete =
+          logged.length >= totalSetsForExercise ||
+          skippedExercises.has(exercise.exerciseId);
 
-      {/* Complete Workout */}
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div>
-            <Label htmlFor="post-notes">Post-Workout Notes (optional)</Label>
-            <Textarea
-              id="post-notes"
-              placeholder="How did it go? Pumps, fatigue, joint issues..."
-              value={postNotes}
-              onChange={(e) => setPostNotes(e.target.value)}
-            />
-          </div>
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={handleComplete}
-            disabled={isPending || totalLogged === 0}
-          >
-            <CheckCircle2 className="mr-2 h-5 w-5" />
-            Complete Workout ({totalLogged} sets)
-          </Button>
-        </CardContent>
-      </Card>
+        return (
+          <ExerciseCard
+            key={exercise.exerciseId}
+            exercise={exercise}
+            sessionId={sessionId}
+            loggedSets={logged}
+            totalSets={totalSetsForExercise}
+            isComplete={isComplete}
+            detail={detail}
+            previousSets={previous}
+            notes={exerciseNotes[exercise.exerciseId] ?? ""}
+            onNotesChange={(val) =>
+              setExerciseNotes((prev) => ({
+                ...prev,
+                [exercise.exerciseId]: val,
+              }))
+            }
+            onSetLogged={(newSet) => {
+              setLoggedSets((prev) => [...prev, newSet]);
+              if (enableTimer) {
+                setRestTimer(exercise.restSeconds);
+              }
+            }}
+            onAddSet={() =>
+              setExtraSets((prev) => ({
+                ...prev,
+                [exercise.exerciseId]:
+                  (prev[exercise.exerciseId] || 0) + 1,
+              }))
+            }
+            onSkipRemaining={() =>
+              setSkippedExercises((prev) => {
+                const next = new Set(prev);
+                next.add(exercise.exerciseId);
+                return next;
+              })
+            }
+          />
+        );
+      })}
+
+      {/* ── Complete Workout ────────────────────────────────── */}
+      <div className="rounded-lg border bg-card p-4 space-y-4 mb-24 md:mb-0">
+        <Textarea
+          placeholder="Post-workout notes — pumps, fatigue, joint issues..."
+          value={postNotes}
+          onChange={(e) => setPostNotes(e.target.value)}
+          className="min-h-[72px] resize-none text-sm"
+        />
+        <Button
+          size="lg"
+          className={cn(
+            "w-full h-12 font-semibold text-base transition-all",
+            totalLogged > 0 && totalLogged >= totalTarget && "shadow-md"
+          )}
+          onClick={handleComplete}
+          disabled={isPending || totalLogged === 0}
+        >
+          <CheckCircle2 className="mr-2 h-5 w-5" />
+          {isPending
+            ? "Saving..."
+            : `Complete Workout (${totalLogged} sets)`}
+        </Button>
+      </div>
     </div>
   );
 }
 
-// ─── Exercise Card ──────────────────────────────────────────────────
+/* ================================================================
+   Exercise Card
+   ================================================================ */
 
 function ExerciseCard({
   exercise,
   sessionId,
-  completedSets,
   loggedSets,
+  totalSets,
+  isComplete,
+  detail,
+  previousSets,
+  notes,
+  onNotesChange,
   onSetLogged,
+  onAddSet,
+  onSkipRemaining,
 }: {
   exercise: PrescribedExercise;
   sessionId: number;
-  completedSets: number;
   loggedSets: LoggedSet[];
+  totalSets: number;
+  isComplete: boolean;
+  detail: ExerciseDetail | undefined;
+  previousSets: PreviousSetData[] | undefined;
+  notes: string;
+  onNotesChange: (val: string) => void;
   onSetLogged: (set: LoggedSet) => void;
+  onAddSet: () => void;
+  onSkipRemaining: () => void;
 }) {
-  const [weight, setWeight] = useState("");
-  const [reps, setReps] = useState("");
-  const [rir, setRir] = useState(exercise.rirTarget.toString());
-  const [isPending, startTransition] = useTransition();
-
-  const isDone = completedSets >= exercise.targetSets;
-  const nextSet = completedSets + 1;
-
-  const handleLog = () => {
-    if (!weight || !reps) {
-      toast.error("Fill in weight and reps");
-      return;
-    }
-
-    startTransition(async () => {
-      const result = await logSet(sessionId, exercise.exerciseId, {
-        setNumber: nextSet,
-        weight: parseFloat(weight),
-        reps: parseInt(reps),
-        rir: rir ? parseInt(rir) : undefined,
-      });
-
-      if (result.success) {
-        onSetLogged({
-          id: result.data.id,
-          exerciseId: exercise.exerciseId,
-          setNumber: nextSet,
-          weight: parseFloat(weight),
-          reps: parseInt(reps),
-          rir: rir ? parseInt(rir) : null,
-        });
-        toast.success(
-          `Set ${nextSet}: ${exercise.exerciseName} — ${weight}lbs x ${reps} @ ${rir} RIR`
-        );
-      } else {
-        toast.error(result.error);
-      }
-    });
-  };
+  const [showNotes, setShowNotes] = useState(false);
+  const completedCount = loggedSets.length;
+  const primaryMuscles = detail?.muscleGroups.primary ?? [];
+  const equipment = detail?.equipment ?? "";
 
   return (
-    <Card className={isDone ? "opacity-60" : ""}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+    <div
+      className={cn(
+        "rounded-lg border bg-card overflow-hidden transition-all duration-300",
+        isComplete && "opacity-60 saturate-50"
+      )}
+    >
+      {/* Card header */}
+      <div className="flex items-start justify-between gap-2 px-4 pt-3 pb-2">
+        <div className="min-w-0 space-y-1.5">
+          {/* Muscle group badges */}
+          {primaryMuscles.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {primaryMuscles.map((mg) => (
+                <MuscleGroupBadge key={mg} group={mg} />
+              ))}
+            </div>
+          )}
           <div>
-            <CardTitle className="text-base">{exercise.exerciseName}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {exercise.targetSets} sets x {exercise.repRangeMin}-
-              {exercise.repRangeMax} reps @ {exercise.rirTarget} RIR
-            </p>
+            <h3 className="font-semibold text-[15px] leading-tight">
+              {exercise.exerciseName}
+            </h3>
+            {equipment && (
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mt-0.5 font-medium">
+                {equipment}
+              </p>
+            )}
           </div>
-          <Badge variant={isDone ? "default" : "secondary"}>
-            {isDone ? (
-              <Check className="h-3 w-3 mr-1" />
-            ) : null}
-            {completedSets}/{exercise.targetSets}
-          </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Logged sets summary */}
-        {loggedSets.length > 0 && (
-          <div className="space-y-1">
-            {loggedSets.map((set) => (
-              <div
-                key={set.id}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <Check className="h-3 w-3 text-green-500" />
-                <span>
-                  Set {set.setNumber}: {set.weight}lbs x {set.reps}
-                  {set.rir !== null ? ` @ ${set.rir} RIR` : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={cn(
+              "text-xs font-semibold tabular-nums px-2.5 py-1 rounded-full transition-colors",
+              isComplete
+                ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                : completedCount > 0
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+            )}
+          >
+            {isComplete ? (
+              <Check className="inline h-3 w-3 mr-0.5 -mt-px" />
+            ) : null}
+            {completedCount}/{totalSets}
+          </span>
+          <ExerciseMenu
+            exerciseName={exercise.exerciseName}
+            isComplete={isComplete}
+            onAddSet={onAddSet}
+            onSkipRemaining={onSkipRemaining}
+            onToggleNotes={() => setShowNotes((prev) => !prev)}
+          />
+        </div>
+      </div>
 
-        {/* Log next set form */}
-        {!isDone && (
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <Label className="text-xs">Weight</Label>
-              <Input
-                type="number"
-                placeholder="lbs"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="h-9"
+      {/* Set rows */}
+      <div className="px-4 pb-3 space-y-px">
+        {Array.from({ length: totalSets }, (_, i) => i + 1).map(
+          (setNumber) => {
+            const logged = loggedSets.find((s) => s.setNumber === setNumber);
+            const prevSet = previousSets?.find(
+              (p) => p.setNumber === setNumber
+            );
+            const isActive =
+              !logged && setNumber === completedCount + 1 && !isComplete;
+
+            if (logged) {
+              return (
+                <CompletedSetRow
+                  key={setNumber}
+                  setNumber={setNumber}
+                  weight={logged.weight}
+                  reps={logged.reps}
+                  rir={logged.rir}
+                />
+              );
+            }
+
+            if (isActive) {
+              return (
+                <ActiveSetRow
+                  key={setNumber}
+                  setNumber={setNumber}
+                  sessionId={sessionId}
+                  exerciseId={exercise.exerciseId}
+                  exerciseName={exercise.exerciseName}
+                  target={exercise}
+                  previousSet={prevSet}
+                  onSetLogged={onSetLogged}
+                />
+              );
+            }
+
+            return (
+              <UpcomingSetRow
+                key={setNumber}
+                setNumber={setNumber}
+                target={exercise}
+                previousSet={prevSet}
               />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs">Reps</Label>
-              <Input
-                type="number"
-                placeholder={`${exercise.repRangeMin}-${exercise.repRangeMax}`}
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                className="h-9"
-              />
-            </div>
-            <div className="w-20">
-              <Label className="text-xs">RIR</Label>
-              <Select value={rir} onValueChange={setRir}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[0, 1, 2, 3, 4, 5].map((v) => (
-                    <SelectItem key={v} value={v.toString()}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              size="sm"
-              className="h-9"
-              onClick={handleLog}
-              disabled={isPending}
-            >
-              Log
-            </Button>
-          </div>
+            );
+          }
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Exercise notes */}
+      {showNotes && (
+        <div className="px-4 pb-3 border-t border-dashed">
+          <Textarea
+            placeholder="Notes for this exercise..."
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            className="min-h-[56px] resize-none text-sm mt-3"
+          />
+        </div>
+      )}
+    </div>
   );
 }

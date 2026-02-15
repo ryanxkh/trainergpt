@@ -1,11 +1,21 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { workoutSessions, exerciseSets, exercises } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import {
+  workoutSessions,
+  exerciseSets,
+  exercises,
+  mesocycles,
+} from "@/lib/db/schema";
+import { eq, asc, and, ne, isNotNull, inArray, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth-utils";
 import { invalidateCache } from "@/lib/cache";
+import type {
+  PreviousSetData,
+  ExerciseDetail,
+  MesocycleContext,
+} from "./_components/types";
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -155,4 +165,110 @@ export async function getActiveSession() {
   }
 
   return session;
+}
+
+// ─── New: Previous performance for "last time" data ──────────────
+
+export async function getPreviousPerformance(
+  exerciseIds: number[],
+  currentSessionId: number
+): Promise<Record<number, PreviousSetData[]>> {
+  if (exerciseIds.length === 0) return {};
+
+  const userId = await requireUserId();
+
+  // Get all sets from completed sessions (not the current one) for the given exercises,
+  // ordered by date desc so the first sets per exercise are from the most recent session
+  const allSets = await db
+    .select({
+      exerciseId: exerciseSets.exerciseId,
+      setNumber: exerciseSets.setNumber,
+      weight: exerciseSets.weight,
+      reps: exerciseSets.reps,
+      rir: exerciseSets.rir,
+      sessionId: exerciseSets.sessionId,
+    })
+    .from(exerciseSets)
+    .innerJoin(workoutSessions, eq(exerciseSets.sessionId, workoutSessions.id))
+    .where(
+      and(
+        eq(workoutSessions.userId, userId),
+        ne(workoutSessions.id, currentSessionId),
+        isNotNull(workoutSessions.durationMinutes),
+        inArray(exerciseSets.exerciseId, exerciseIds),
+      )
+    )
+    .orderBy(desc(workoutSessions.date), asc(exerciseSets.setNumber));
+
+  // Track the most recent sessionId per exercise (first one seen, since ordered by date desc)
+  const mostRecentSession: Record<number, number> = {};
+  for (const set of allSets) {
+    if (!(set.exerciseId in mostRecentSession)) {
+      mostRecentSession[set.exerciseId] = set.sessionId;
+    }
+  }
+
+  // Collect only sets from the most recent session per exercise
+  const result: Record<number, PreviousSetData[]> = {};
+  for (const set of allSets) {
+    if (set.sessionId === mostRecentSession[set.exerciseId]) {
+      if (!result[set.exerciseId]) {
+        result[set.exerciseId] = [];
+      }
+      result[set.exerciseId].push({
+        weight: set.weight,
+        reps: set.reps,
+        rir: set.rir,
+        setNumber: set.setNumber,
+      });
+    }
+  }
+
+  return result;
+}
+
+// ─── New: Session with mesocycle context and exercise details ────
+
+export async function getExerciseDetails(
+  exerciseIds: number[]
+): Promise<Record<number, ExerciseDetail>> {
+  if (exerciseIds.length === 0) return {};
+
+  const rows = await db
+    .select({
+      id: exercises.id,
+      muscleGroups: exercises.muscleGroups,
+      equipment: exercises.equipment,
+    })
+    .from(exercises)
+    .where(inArray(exercises.id, exerciseIds));
+
+  const result: Record<number, ExerciseDetail> = {};
+  for (const row of rows) {
+    result[row.id] = {
+      muscleGroups: row.muscleGroups,
+      equipment: row.equipment,
+    };
+  }
+  return result;
+}
+
+export async function getActiveMesocycleContext(): Promise<MesocycleContext | null> {
+  const userId = await requireUserId();
+
+  const activeMeso = await db.query.mesocycles.findFirst({
+    where: and(
+      eq(mesocycles.userId, userId),
+      eq(mesocycles.status, "active")
+    ),
+  });
+
+  if (!activeMeso) return null;
+
+  return {
+    name: activeMeso.name,
+    currentWeek: activeMeso.currentWeek,
+    totalWeeks: activeMeso.totalWeeks,
+    splitType: activeMeso.splitType,
+  };
 }

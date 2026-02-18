@@ -1,3 +1,5 @@
+export type SetType = "normal" | "myorep" | "dropset";
+
 export type PrescribedExercise = {
   exerciseId: number;
   exerciseName: string;
@@ -15,6 +17,7 @@ export type LoggedSet = {
   weight: number;
   reps: number;
   rir: number | null;
+  setType: SetType;
 };
 
 export type PreviousSetData = {
@@ -22,11 +25,17 @@ export type PreviousSetData = {
   reps: number;
   rir: number | null;
   setNumber: number;
+  setType: SetType;
 };
 
 export type ExerciseDetail = {
   muscleGroups: { primary: string[]; secondary: string[] };
   equipment: string;
+  movementPattern: string;
+  sfrRating: string;
+  isStretchFocused: boolean;
+  repRangeOptimal: [number, number];
+  defaultRestSeconds: number;
 };
 
 export type MesocycleContext = {

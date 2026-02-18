@@ -60,6 +60,15 @@ gh auth setup-git && git push
 | `src/lib/db/index.ts` | Lazy DB connection via Proxy (builds work without env vars) |
 | `src/lib/flags.ts` | Feature flags (ai-model, advanced-coaching, progress-charts, workout-timer) |
 | `src/app/(app)/coach/_components/coach-client.tsx` | Chat UI using `useChat` |
+| `src/app/(app)/_components/mobile-nav.tsx` | Mobile bottom tab bar (4 tabs, active route indicator) |
+| `src/app/(app)/_components/sidebar-nav.tsx` | Desktop sidebar nav with active route highlighting |
+| `src/app/(app)/workout/_components/prescribed-workout.tsx` | Workout view: exercise cards, set logging, mesocycle header |
+| `src/app/(app)/workout/_components/exercise-set-row.tsx` | Set row states: completed, active (inputs), upcoming |
+| `src/app/(app)/workout/_components/exercise-menu.tsx` | Sheet menu: Add Set, Skip Remaining, Notes |
+| `src/app/(app)/workout/_components/rest-timer-banner.tsx` | Sticky rest timer with countdown + GO state |
+| `src/app/(app)/workout/_components/muscle-group-badge.tsx` | 14 muscle groups with distinct color badges |
+| `src/app/(app)/workout/_components/types.ts` | Shared types for workout components |
+| `src/app/(app)/workout/actions.ts` | Server actions: log sets, complete workout, previous performance |
 | `evals/` | Coach eval framework (types, fixtures, scenarios, runner) |
 | `docs/hypertrophy_training_reference.md` | Full training science reference |
 

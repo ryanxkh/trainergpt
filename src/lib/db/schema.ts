@@ -141,6 +141,7 @@ export const exerciseSets = pgTable("exercise_sets", {
   reps: integer("reps").notNull(),
   rir: integer("rir"), // Reps in Reserve (0-5)
   rpe: real("rpe"), // Rating of Perceived Exertion (6-10)
+  setType: text("set_type").default("normal"), // 'normal' | 'myorep' | 'dropset'
   restSeconds: integer("rest_seconds"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

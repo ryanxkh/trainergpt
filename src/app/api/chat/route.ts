@@ -546,8 +546,12 @@ export async function POST(req: Request) {
             .number()
             .optional()
             .describe("Reps in Reserve (0-5)"),
+          setType: z
+            .enum(["normal", "myorep", "dropset"])
+            .optional()
+            .describe("Set type: normal (default), myorep (myo-rep match set), or dropset"),
         }),
-        execute: async ({ exerciseName, weight, reps, rir }) => {
+        execute: async ({ exerciseName, weight, reps, rir, setType }) => {
           // Find active session (no durationMinutes = still in progress)
           const activeSessions = await db.query.workoutSessions.findMany({
             where: eq(workoutSessions.userId, userId),
@@ -601,6 +605,7 @@ export async function POST(req: Request) {
               weight,
               reps,
               rir: rir ?? null,
+              setType: setType ?? "normal",
             })
             .returning();
 

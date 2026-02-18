@@ -15,6 +15,7 @@ import type {
   PreviousSetData,
   ExerciseDetail,
   MesocycleContext,
+  SetType,
 } from "./_components/types";
 
 type ActionResult<T> =
@@ -59,6 +60,7 @@ export async function logSet(
     reps: number;
     rir?: number;
     rpe?: number;
+    setType?: SetType;
     restSeconds?: number;
     notes?: string;
   }
@@ -75,6 +77,7 @@ export async function logSet(
         reps: data.reps,
         rir: data.rir ?? null,
         rpe: data.rpe ?? null,
+        setType: data.setType ?? "normal",
         restSeconds: data.restSeconds ?? null,
         notes: data.notes ?? null,
       })
@@ -186,6 +189,7 @@ export async function getPreviousPerformance(
       weight: exerciseSets.weight,
       reps: exerciseSets.reps,
       rir: exerciseSets.rir,
+      setType: exerciseSets.setType,
       sessionId: exerciseSets.sessionId,
     })
     .from(exerciseSets)
@@ -220,6 +224,7 @@ export async function getPreviousPerformance(
         reps: set.reps,
         rir: set.rir,
         setNumber: set.setNumber,
+        setType: (set.setType as SetType) ?? "normal",
       });
     }
   }
@@ -239,6 +244,11 @@ export async function getExerciseDetails(
       id: exercises.id,
       muscleGroups: exercises.muscleGroups,
       equipment: exercises.equipment,
+      movementPattern: exercises.movementPattern,
+      sfrRating: exercises.sfrRating,
+      isStretchFocused: exercises.isStretchFocused,
+      repRangeOptimal: exercises.repRangeOptimal,
+      defaultRestSeconds: exercises.defaultRestSeconds,
     })
     .from(exercises)
     .where(inArray(exercises.id, exerciseIds));
@@ -248,6 +258,11 @@ export async function getExerciseDetails(
     result[row.id] = {
       muscleGroups: row.muscleGroups,
       equipment: row.equipment,
+      movementPattern: row.movementPattern,
+      sfrRating: row.sfrRating ?? "medium",
+      isStretchFocused: row.isStretchFocused ?? false,
+      repRangeOptimal: (row.repRangeOptimal as [number, number]) ?? [8, 12],
+      defaultRestSeconds: row.defaultRestSeconds ?? 120,
     };
   }
   return result;

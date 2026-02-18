@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Check, Timer, CheckCircle2 } from "lucide-react";
+import { Check, Timer, CheckCircle2, StickyNote } from "lucide-react";
 import { completeWorkout } from "../actions";
 import { MuscleGroupBadge } from "./muscle-group-badge";
 import { RestTimerBanner } from "./rest-timer-banner";
 import { CompletedSetRow, ActiveSetRow, UpcomingSetRow } from "./exercise-set-row";
 import { ExerciseMenu } from "./exercise-menu";
+import { ExerciseInfoSheet } from "./exercise-info-sheet";
 import type {
   PrescribedExercise,
   LoggedSet,
   PreviousSetData,
   ExerciseDetail,
   MesocycleContext,
+  SetType,
 } from "./types";
 
 type Props = {
@@ -209,6 +211,10 @@ export default function PrescribedWorkout({
           logged.length >= totalSetsForExercise ||
           skippedExercises.has(exercise.exerciseId);
 
+        // Compute last logged weight for this exercise in the current session
+        const lastLoggedWeight =
+          logged.length > 0 ? logged[logged.length - 1].weight : undefined;
+
         return (
           <ExerciseCard
             key={exercise.exerciseId}
@@ -219,6 +225,7 @@ export default function PrescribedWorkout({
             isComplete={isComplete}
             detail={detail}
             previousSets={previous}
+            lastLoggedWeight={lastLoggedWeight}
             notes={exerciseNotes[exercise.exerciseId] ?? ""}
             onNotesChange={(val) =>
               setExerciseNotes((prev) => ({
@@ -289,6 +296,7 @@ function ExerciseCard({
   isComplete,
   detail,
   previousSets,
+  lastLoggedWeight,
   notes,
   onNotesChange,
   onSetLogged,
@@ -302,6 +310,7 @@ function ExerciseCard({
   isComplete: boolean;
   detail: ExerciseDetail | undefined;
   previousSets: PreviousSetData[] | undefined;
+  lastLoggedWeight: number | undefined;
   notes: string;
   onNotesChange: (val: string) => void;
   onSetLogged: (set: LoggedSet) => void;
@@ -342,7 +351,7 @@ function ExerciseCard({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <span
             className={cn(
               "text-xs font-semibold tabular-nums px-2.5 py-1 rounded-full transition-colors",
@@ -358,6 +367,29 @@ function ExerciseCard({
             ) : null}
             {completedCount}/{totalSets}
           </span>
+          {/* Notes toggle button */}
+          <button
+            type="button"
+            onClick={() => setShowNotes((prev) => !prev)}
+            className={cn(
+              "h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors active:scale-95 relative",
+              showNotes
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            <StickyNote className="h-4 w-4" />
+            {notes.trim() && !showNotes && (
+              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+            )}
+          </button>
+          {/* Exercise info sheet */}
+          {detail && (
+            <ExerciseInfoSheet
+              exerciseName={exercise.exerciseName}
+              detail={detail}
+            />
+          )}
           <ExerciseMenu
             exerciseName={exercise.exerciseName}
             isComplete={isComplete}
@@ -379,6 +411,10 @@ function ExerciseCard({
             const isActive =
               !logged && setNumber === completedCount + 1 && !isComplete;
 
+            // Determine default set type from previous performance
+            const defaultSetType: SetType =
+              prevSet?.setType ?? "normal";
+
             if (logged) {
               return (
                 <CompletedSetRow
@@ -387,6 +423,7 @@ function ExerciseCard({
                   weight={logged.weight}
                   reps={logged.reps}
                   rir={logged.rir}
+                  setType={logged.setType}
                 />
               );
             }
@@ -401,6 +438,8 @@ function ExerciseCard({
                   exerciseName={exercise.exerciseName}
                   target={exercise}
                   previousSet={prevSet}
+                  lastLoggedWeight={lastLoggedWeight}
+                  defaultSetType={defaultSetType}
                   onSetLogged={onSetLogged}
                 />
               );

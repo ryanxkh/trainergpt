@@ -786,6 +786,7 @@ export default function WorkoutPage({
           weight: s.weight,
           reps: s.reps,
           rir: s.rir,
+          setType: ((s as unknown as { setType?: string }).setType as import("./types").SetType) ?? "normal",
         }))}
         enableTimer={enableTimer}
         onComplete={handleComplete}

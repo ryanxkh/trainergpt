@@ -1,9 +1,10 @@
 /**
- * Production exercise seeder — only inserts exercises that don't already exist.
+ * Production exercise seeder — inserts new exercises AND updates existing ones.
  * Run with: npx tsx src/lib/db/seed-exercises.ts
  */
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
 import { exercises } from "./schema";
 import { exerciseData } from "./exercise-data";
 import { config } from "dotenv";
@@ -15,27 +16,55 @@ const db = drizzle(sql);
 async function seedExercises() {
   console.log("Checking existing exercises...");
 
-  const existing = await db.select({ name: exercises.name }).from(exercises);
-  const existingNames = new Set(existing.map((e) => e.name));
+  const existing = await db
+    .select({ id: exercises.id, name: exercises.name })
+    .from(exercises);
+  const existingByName = new Map(existing.map((e) => [e.name, e.id]));
 
-  console.log(`  Found ${existingNames.size} existing exercises`);
+  console.log(`  Found ${existingByName.size} existing exercises`);
 
-  const newExercises = exerciseData.filter((e) => !existingNames.has(e.name));
+  // Split into new inserts vs updates
+  const newExercises = exerciseData.filter((e) => !existingByName.has(e.name));
+  const existingToUpdate = exerciseData.filter((e) => existingByName.has(e.name));
 
-  if (newExercises.length === 0) {
-    console.log("  No new exercises to add. All up to date!");
-    return;
+  // Insert new exercises
+  if (newExercises.length > 0) {
+    console.log(`  Inserting ${newExercises.length} new exercises...`);
+    const inserted = await db
+      .insert(exercises)
+      .values(newExercises)
+      .returning();
+    console.log(`  Successfully inserted ${inserted.length} exercises`);
+  } else {
+    console.log("  No new exercises to add.");
   }
 
-  console.log(`  Inserting ${newExercises.length} new exercises...`);
+  // Update existing exercises with latest data from exercise-data.ts
+  if (existingToUpdate.length > 0) {
+    console.log(`  Updating ${existingToUpdate.length} existing exercises...`);
+    let updated = 0;
+    for (const data of existingToUpdate) {
+      const id = existingByName.get(data.name)!;
+      await db
+        .update(exercises)
+        .set({
+          muscleGroups: data.muscleGroups,
+          movementPattern: data.movementPattern,
+          equipment: data.equipment,
+          sfrRating: data.sfrRating,
+          isStretchFocused: data.isStretchFocused,
+          repRangeOptimal: data.repRangeOptimal,
+          defaultRestSeconds: data.defaultRestSeconds,
+        })
+        .where(eq(exercises.id, id));
+      updated++;
+    }
+    console.log(`  Successfully updated ${updated} exercises`);
+  } else {
+    console.log("  No existing exercises to update.");
+  }
 
-  const inserted = await db
-    .insert(exercises)
-    .values(newExercises)
-    .returning();
-
-  console.log(`  Successfully inserted ${inserted.length} exercises`);
-  console.log(`  Total exercises in DB: ${existingNames.size + inserted.length}`);
+  console.log(`  Total exercises in DB: ${existing.length + newExercises.length}`);
 }
 
 seedExercises().catch((err) => {

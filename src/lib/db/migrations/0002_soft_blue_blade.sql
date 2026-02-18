@@ -1,0 +1,1 @@
+ALTER TABLE "exercise_sets" ADD COLUMN "set_type" text DEFAULT 'normal';

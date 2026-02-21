@@ -4,6 +4,7 @@ import { Dumbbell, LogOut } from "lucide-react";
 import { auth, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav } from "./_components/sidebar-nav";
 import { MobileNav } from "./_components/mobile-nav";
 
@@ -13,7 +14,10 @@ async function UserSection() {
   if (!session?.user) return null;
 
   return (
-    <div className="mt-auto border-t p-4">
+    <div className="mt-auto border-t p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <ThemeToggle />
+      </div>
       <div className="flex items-center gap-3">
         <div className="flex-1 truncate">
           <p className="text-sm font-medium">{session.user.name}</p>
@@ -41,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen">
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 border-r bg-muted/40 md:flex md:flex-col">
-        <div className="flex h-14 items-center border-b px-4">
+        <div className="flex h-16 items-center border-b px-4">
           <Link href="/coach" className="flex items-center gap-2 font-bold">
             <Dumbbell className="h-6 w-6" />
             <span>TrainerGPT</span>

@@ -395,7 +395,7 @@ async function ChartsSection() {
 export default function HistoryPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">History</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">History</h1>
 
       <Suspense fallback={null}>
         <ChartsSection />

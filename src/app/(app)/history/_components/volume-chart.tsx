@@ -46,30 +46,30 @@ export function VolumeChart({
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
         <XAxis
           dataKey="weekLabel"
-          tick={{ fontSize: 12, fill: "#a1a1aa" }}
-          axisLine={{ stroke: "#3f3f46" }}
+          tick={{ fontSize: 12, fill: "#888888" }}
+          axisLine={{ stroke: "#333333" }}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: "#a1a1aa" }}
-          axisLine={{ stroke: "#3f3f46" }}
+          tick={{ fontSize: 12, fill: "#888888" }}
+          axisLine={{ stroke: "#333333" }}
           label={{
             value: "Sets",
             angle: -90,
             position: "insideLeft",
-            style: { fill: "#a1a1aa", fontSize: 12 },
+            style: { fill: "#888888", fontSize: 12 },
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: "#18181b",
-            border: "1px solid #3f3f46",
+            backgroundColor: "#111111",
+            border: "1px solid #333333",
             borderRadius: 8,
             fontSize: 12,
           }}
-          labelStyle={{ color: "#fafafa" }}
+          labelStyle={{ color: "#ededed" }}
         />
         <Legend
           wrapperStyle={{ fontSize: 12 }}

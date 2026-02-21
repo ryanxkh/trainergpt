@@ -18,15 +18,15 @@ export async function GET(req: Request) {
             justifyContent: "center",
             width: "100%",
             height: "100%",
-            backgroundColor: "#09090b",
-            color: "#fafafa",
+            backgroundColor: "#000000",
+            color: "#ededed",
             fontFamily: "sans-serif",
           }}
         >
           <div style={{ fontSize: 64, fontWeight: 700, display: "flex", alignItems: "center", gap: 16 }}>
             TrainerGPT
           </div>
-          <div style={{ fontSize: 28, color: "#a1a1aa", marginTop: 16 }}>
+          <div style={{ fontSize: 28, color: "#888888", marginTop: 16 }}>
             AI-Powered Hypertrophy Coach
           </div>
         </div>
@@ -55,8 +55,8 @@ export async function GET(req: Request) {
             justifyContent: "center",
             width: "100%",
             height: "100%",
-            backgroundColor: "#09090b",
-            color: "#fafafa",
+            backgroundColor: "#000000",
+            color: "#ededed",
             fontSize: 40,
             fontFamily: "sans-serif",
           }}
@@ -87,8 +87,8 @@ export async function GET(req: Request) {
           flexDirection: "column",
           width: "100%",
           height: "100%",
-          backgroundColor: "#09090b",
-          color: "#fafafa",
+          backgroundColor: "#000000",
+          color: "#ededed",
           fontFamily: "sans-serif",
           padding: 60,
         }}
@@ -102,10 +102,10 @@ export async function GET(req: Request) {
             marginBottom: 40,
           }}
         >
-          <div style={{ fontSize: 28, color: "#a1a1aa", display: "flex" }}>
+          <div style={{ fontSize: 28, color: "#888888", display: "flex" }}>
             TrainerGPT
           </div>
-          <div style={{ fontSize: 22, color: "#71717a", display: "flex" }}>
+          <div style={{ fontSize: 22, color: "#666666", display: "flex" }}>
             {dateStr}
           </div>
         </div>
@@ -125,26 +125,26 @@ export async function GET(req: Request) {
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 42, fontWeight: 700, display: "flex" }}>{totalSets}</div>
-            <div style={{ fontSize: 20, color: "#a1a1aa", display: "flex" }}>Sets</div>
+            <div style={{ fontSize: 20, color: "#888888", display: "flex" }}>Sets</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 42, fontWeight: 700, display: "flex" }}>
               {exerciseNames.length}
             </div>
-            <div style={{ fontSize: 20, color: "#a1a1aa", display: "flex" }}>Exercises</div>
+            <div style={{ fontSize: 20, color: "#888888", display: "flex" }}>Exercises</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 42, fontWeight: 700, display: "flex" }}>
               {totalVolume.toLocaleString()}
             </div>
-            <div style={{ fontSize: 20, color: "#a1a1aa", display: "flex" }}>Volume (lbs)</div>
+            <div style={{ fontSize: 20, color: "#888888", display: "flex" }}>Volume (lbs)</div>
           </div>
           {session.durationMinutes && (
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 42, fontWeight: 700, display: "flex" }}>
                 {session.durationMinutes}
               </div>
-              <div style={{ fontSize: 20, color: "#a1a1aa", display: "flex" }}>Minutes</div>
+              <div style={{ fontSize: 20, color: "#888888", display: "flex" }}>Minutes</div>
             </div>
           )}
         </div>
@@ -165,8 +165,8 @@ export async function GET(req: Request) {
                 display: "flex",
                 padding: "8px 20px",
                 borderRadius: 9999,
-                backgroundColor: "#27272a",
-                color: "#e4e4e7",
+                backgroundColor: "#333333",
+                color: "#ededed",
                 fontSize: 20,
               }}
             >
@@ -179,8 +179,8 @@ export async function GET(req: Request) {
                 display: "flex",
                 padding: "8px 20px",
                 borderRadius: 9999,
-                backgroundColor: "#27272a",
-                color: "#71717a",
+                backgroundColor: "#333333",
+                color: "#666666",
                 fontSize: 20,
               }}
             >

@@ -105,7 +105,7 @@ async function WorkoutContent({
           <Link href="/workout" className="text-sm text-muted-foreground hover:underline">
             &larr; Back to Workout
           </Link>
-          <h1 className="text-3xl font-bold mt-1">{session.sessionName}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1">{session.sessionName}</h1>
           <div className="flex items-center gap-4 mt-2 text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />

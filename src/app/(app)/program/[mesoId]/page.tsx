@@ -40,7 +40,7 @@ async function MesocycleContent({
           Back to Coach
         </Link>
         <div className="flex items-center gap-3 mt-2">
-          <h1 className="text-3xl font-bold">{meso.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{meso.name}</h1>
           <Badge
             variant={meso.status === "active" ? "default" : "secondary"}
             className="capitalize"

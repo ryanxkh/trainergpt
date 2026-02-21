@@ -115,7 +115,7 @@ function NoWorkoutState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">No workout for today</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">No workout for today</h1>
         <p className="text-muted-foreground max-w-md">
           Ask your coach to prescribe a workout, or start a manual session.
         </p>
@@ -164,7 +164,7 @@ function ReadinessForm({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Start Workout</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Start Workout</h1>
       </div>
 
       <Card>
@@ -451,7 +451,7 @@ function ActiveWorkout({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{session.sessionName}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{session.sessionName}</h1>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground">
             <Timer className="h-4 w-4" />
             <span className="font-mono">{elapsed}</span>
@@ -761,7 +761,7 @@ export default function WorkoutPage({
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Today</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
         <Card>
           <CardContent className="py-8">
             <p className="text-center text-muted-foreground">Loading...</p>

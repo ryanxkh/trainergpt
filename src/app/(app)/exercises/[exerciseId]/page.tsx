@@ -74,7 +74,7 @@ async function ExerciseContent({ exerciseId }: { exerciseId: number }) {
           <ArrowLeft className="h-3 w-3" />
           Back to Exercise Library
         </Link>
-        <h1 className="text-3xl font-bold mt-2">{exercise.name}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight mt-2">{exercise.name}</h1>
         <div className="flex flex-wrap gap-2 mt-3">
           {mg.primary.map((g) => (
             <Badge key={g} variant="default" className="capitalize">

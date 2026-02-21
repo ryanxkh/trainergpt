@@ -35,9 +35,9 @@ export default function CoachClient() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] flex-col">
+    <div className="flex h-[calc(100dvh-9.5rem)] md:h-[calc(100vh-3rem)] flex-col">
       {/* Messages */}
-      <div className="flex-1 space-y-4 overflow-auto pb-4">
+      <div className="flex-1 space-y-4 overflow-auto pb-4 min-h-0">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full space-y-6">
             <div className="text-center space-y-2">

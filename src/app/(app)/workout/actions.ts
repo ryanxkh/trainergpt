@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth-utils";
 import { invalidateCache } from "@/lib/cache";
 import type {
+  PrescribedExercise,
   PreviousSetData,
   ExerciseDetail,
   MesocycleContext,
@@ -266,6 +267,95 @@ export async function getExerciseDetails(
     };
   }
   return result;
+}
+
+// ─── Exercise Swap ──────────────────────────────────────────────────
+
+export async function getAlternativeExercises(
+  exerciseId: number,
+  excludeIds: number[]
+): Promise<{ id: number; name: string; equipment: string; muscleGroups: { primary: string[]; secondary: string[] } }[]> {
+  // Look up the exercise's primary muscle groups
+  const current = await db.query.exercises.findFirst({
+    where: eq(exercises.id, exerciseId),
+  });
+  if (!current) return [];
+
+  const primaryMuscles = current.muscleGroups.primary;
+  if (primaryMuscles.length === 0) return [];
+
+  // Get all exercises and filter to those sharing at least one primary muscle group
+  const allExercises = await db.query.exercises.findMany();
+  const excluded = new Set([exerciseId, ...excludeIds]);
+
+  return allExercises
+    .filter((ex) => {
+      if (excluded.has(ex.id)) return false;
+      return ex.muscleGroups.primary.some((mg) => primaryMuscles.includes(mg));
+    })
+    .map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      equipment: ex.equipment,
+      muscleGroups: ex.muscleGroups,
+    }));
+}
+
+export async function replaceExercise(
+  sessionId: number,
+  oldExerciseId: number,
+  newExerciseId: number
+): Promise<ActionResult<{ exerciseName: string }>> {
+  try {
+    const userId = await requireUserId();
+
+    // Fetch new exercise for name
+    const newExercise = await db.query.exercises.findFirst({
+      where: eq(exercises.id, newExerciseId),
+    });
+    if (!newExercise) {
+      return { success: false, error: "Exercise not found" };
+    }
+
+    // Fetch session to get prescribed exercises
+    const session = await db.query.workoutSessions.findFirst({
+      where: eq(workoutSessions.id, sessionId),
+    });
+    if (!session || !session.prescribedExercises) {
+      return { success: false, error: "Session not found" };
+    }
+
+    // Swap exercise in prescription (keep all other params)
+    const updatedPrescription = (session.prescribedExercises as PrescribedExercise[]).map((ex) => {
+      if (ex.exerciseId === oldExerciseId) {
+        return { ...ex, exerciseId: newExerciseId, exerciseName: newExercise.name };
+      }
+      return ex;
+    });
+
+    // Delete logged sets for old exercise in this session
+    await db
+      .delete(exerciseSets)
+      .where(
+        and(
+          eq(exerciseSets.sessionId, sessionId),
+          eq(exerciseSets.exerciseId, oldExerciseId)
+        )
+      );
+
+    // Update session with new prescription
+    await db
+      .update(workoutSessions)
+      .set({ prescribedExercises: updatedPrescription })
+      .where(eq(workoutSessions.id, sessionId));
+
+    revalidatePath("/workout");
+    await invalidateCache(userId, ["volume"]);
+
+    return { success: true, data: { exerciseName: newExercise.name } };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to replace exercise" };
+  }
 }
 
 export async function getActiveMesocycleContext(): Promise<MesocycleContext | null> {

@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Check, Timer, CheckCircle2, StickyNote } from "lucide-react";
-import { completeWorkout } from "../actions";
+import { completeWorkout, getExerciseDetails, getPreviousPerformance } from "../actions";
 import { MuscleGroupBadge } from "./muscle-group-badge";
 import { RestTimerBanner } from "./rest-timer-banner";
 import { CompletedSetRow, ActiveSetRow, UpcomingSetRow } from "./exercise-set-row";
@@ -46,6 +46,9 @@ export default function PrescribedWorkout({
   exerciseDetails,
   previousPerformance,
 }: Props) {
+  const [exercises, setExercises] = useState(prescribedExercises);
+  const [exerciseDetailsState, setExerciseDetailsState] = useState(exerciseDetails);
+  const [previousPerformanceState, setPreviousPerformanceState] = useState(previousPerformance);
   const [loggedSets, setLoggedSets] = useState<LoggedSet[]>(initialSets);
   const [postNotes, setPostNotes] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -100,8 +103,28 @@ export default function PrescribedWorkout({
     [loggedSets]
   );
 
+  const handleReplace = async (oldId: number, newId: number, newName: string) => {
+    // Update prescription state
+    setExercises((prev) =>
+      prev.map((ex) =>
+        ex.exerciseId === oldId
+          ? { ...ex, exerciseId: newId, exerciseName: newName }
+          : ex
+      )
+    );
+    // Clear logged sets for old exercise
+    setLoggedSets((prev) => prev.filter((s) => s.exerciseId !== oldId));
+    // Fetch new exercise details + previous performance in parallel
+    const [newDetails, newPrevious] = await Promise.all([
+      getExerciseDetails([newId]),
+      getPreviousPerformance([newId], sessionId),
+    ]);
+    setExerciseDetailsState((prev) => ({ ...prev, ...newDetails }));
+    setPreviousPerformanceState((prev) => ({ ...prev, ...newPrevious }));
+  };
+
   const totalLogged = loggedSets.length;
-  const totalTarget = prescribedExercises.reduce(
+  const totalTarget = exercises.reduce(
     (sum, e) => sum + e.targetSets + (extraSets[e.exerciseId] || 0),
     0
   );
@@ -114,7 +137,7 @@ export default function PrescribedWorkout({
       ...Object.entries(exerciseNotes)
         .filter(([, note]) => note.trim())
         .map(([id, note]) => {
-          const ex = prescribedExercises.find(
+          const ex = exercises.find(
             (e) => e.exerciseId === parseInt(id)
           );
           return `${ex?.exerciseName ?? "Exercise"}: ${note}`;
@@ -201,10 +224,10 @@ export default function PrescribedWorkout({
       )}
 
       {/* ── Exercise Cards ──────────────────────────────────── */}
-      {prescribedExercises.map((exercise) => {
+      {exercises.map((exercise) => {
         const logged = setsForExercise(exercise.exerciseId);
-        const detail = exerciseDetails[exercise.exerciseId];
-        const previous = previousPerformance[exercise.exerciseId];
+        const detail = exerciseDetailsState[exercise.exerciseId];
+        const previous = previousPerformanceState[exercise.exerciseId];
         const totalSetsForExercise =
           exercise.targetSets + (extraSets[exercise.exerciseId] || 0);
         const isComplete =
@@ -226,6 +249,7 @@ export default function PrescribedWorkout({
             detail={detail}
             previousSets={previous}
             lastLoggedWeight={lastLoggedWeight}
+            excludeExerciseIds={exercises.map((e) => e.exerciseId)}
             notes={exerciseNotes[exercise.exerciseId] ?? ""}
             onNotesChange={(val) =>
               setExerciseNotes((prev) => ({
@@ -252,6 +276,9 @@ export default function PrescribedWorkout({
                 next.add(exercise.exerciseId);
                 return next;
               })
+            }
+            onReplace={(newId, newName) =>
+              handleReplace(exercise.exerciseId, newId, newName)
             }
           />
         );
@@ -297,11 +324,13 @@ function ExerciseCard({
   detail,
   previousSets,
   lastLoggedWeight,
+  excludeExerciseIds,
   notes,
   onNotesChange,
   onSetLogged,
   onAddSet,
   onSkipRemaining,
+  onReplace,
 }: {
   exercise: PrescribedExercise;
   sessionId: number;
@@ -311,11 +340,13 @@ function ExerciseCard({
   detail: ExerciseDetail | undefined;
   previousSets: PreviousSetData[] | undefined;
   lastLoggedWeight: number | undefined;
+  excludeExerciseIds: number[];
   notes: string;
   onNotesChange: (val: string) => void;
   onSetLogged: (set: LoggedSet) => void;
   onAddSet: () => void;
   onSkipRemaining: () => void;
+  onReplace: (newId: number, newName: string) => void;
 }) {
   const [showNotes, setShowNotes] = useState(false);
   const completedCount = loggedSets.length;
@@ -392,10 +423,14 @@ function ExerciseCard({
           )}
           <ExerciseMenu
             exerciseName={exercise.exerciseName}
+            exerciseId={exercise.exerciseId}
+            sessionId={sessionId}
             isComplete={isComplete}
+            excludeExerciseIds={excludeExerciseIds}
             onAddSet={onAddSet}
             onSkipRemaining={onSkipRemaining}
             onToggleNotes={() => setShowNotes((prev) => !prev)}
+            onReplace={onReplace}
           />
         </div>
       </div>

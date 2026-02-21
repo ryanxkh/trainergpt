@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TrainerGPT — AI hypertrophy training coach. The app lives in `trainergpt/`. All commands run from that directory.
 
-**Production**: https://trainergpt.vercel.app
+**Production**: https://trainergpt.xyz
 **Repo**: https://github.com/ryanxkh/trainergpt
 
 ## Commands
@@ -63,11 +63,12 @@ gh auth setup-git && git push
 | `src/app/(app)/_components/mobile-nav.tsx` | Mobile bottom tab bar (4 tabs, active route indicator) |
 | `src/app/(app)/_components/sidebar-nav.tsx` | Desktop sidebar nav with active route highlighting |
 | `src/app/(app)/workout/_components/prescribed-workout.tsx` | Workout view: exercise cards, set logging, mesocycle header |
-| `src/app/(app)/workout/_components/exercise-set-row.tsx` | Set row states: completed, active (inputs), upcoming |
+| `src/app/(app)/workout/_components/exercise-set-row.tsx` | Set row states: completed (w/ set type badge), active (inputs + set type toggle), upcoming |
 | `src/app/(app)/workout/_components/exercise-menu.tsx` | Sheet menu: Add Set, Skip Remaining, Notes |
+| `src/app/(app)/workout/_components/exercise-info-sheet.tsx` | Exercise info bottom sheet (muscles, SFR, movement pattern, rest) |
 | `src/app/(app)/workout/_components/rest-timer-banner.tsx` | Sticky rest timer with countdown + GO state |
 | `src/app/(app)/workout/_components/muscle-group-badge.tsx` | 14 muscle groups with distinct color badges |
-| `src/app/(app)/workout/_components/types.ts` | Shared types for workout components |
+| `src/app/(app)/workout/_components/types.ts` | Shared types: SetType, LoggedSet, PreviousSetData, ExerciseDetail, etc. |
 | `src/app/(app)/workout/actions.ts` | Server actions: log sets, complete workout, previous performance |
 | `evals/` | Coach eval framework (types, fixtures, scenarios, runner) |
 | `docs/hypertrophy_training_reference.md` | Full training science reference |
@@ -89,7 +90,7 @@ Client (useChat/sendMessage) → /api/chat POST
 4. `getProgressionTrend` — Per-session averages + recommendation for an exercise
 5. `getExerciseLibrary` — Search exercises, returns `{id, name, equipment}` only
 6. `prescribeWorkout` — Creates session after validating exercise IDs + volume vs MRV
-7. `logWorkoutSet` — Logs a set to the active session (fuzzy exercise name match)
+7. `logWorkoutSet` — Logs a set to the active session (fuzzy exercise name match, supports setType)
 
 ### System Prompt Structure (`src/lib/ai.ts`)
 
@@ -140,6 +141,8 @@ The coach has been through a 3-phase tuning process (Audit → Eval → Improve)
 Required in `trainergpt/.env.local` and Vercel dashboard:
 ```
 POSTGRES_URL, KV_REST_API_URL, KV_REST_API_TOKEN, BLOB_READ_WRITE_TOKEN,
-ANTHROPIC_API_KEY, NEXTAUTH_SECRET, NEXTAUTH_URL
+ANTHROPIC_API_KEY, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET
 ```
 Optional: `EDGE_CONFIG` (for feature flags via Edge Config)
+
+> **Auth note**: NextAuth v5 uses `AUTH_SECRET` (not `NEXTAUTH_SECRET`). No `NEXTAUTH_URL` needed in production — Vercel auto-detects via `VERCEL_URL`. GitHub OAuth callback URL must match production domain (`https://trainergpt.xyz/api/auth/callback/github`).

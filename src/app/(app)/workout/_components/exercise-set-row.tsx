@@ -123,6 +123,7 @@ export function ActiveSetRow({
 
   return (
     <div className="py-2.5 border-l-2 border-primary pl-3 -ml-0.5 space-y-2 bg-primary/[0.03] dark:bg-primary/[0.06] rounded-r-md">
+      {/* Row 1: Set#, Weight, ×, Reps, Log */}
       <div className="flex items-center gap-2">
         <span className="text-xs font-bold text-foreground w-5 tabular-nums">
           {setNumber}
@@ -144,26 +145,6 @@ export function ActiveSetRow({
           onChange={(e) => setReps(e.target.value)}
           className="h-11 w-16 text-center font-medium tabular-nums text-base"
         />
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">RIR</span>
-          <div className="flex gap-0.5">
-            {[0, 1, 2, 3, 4].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setRir(v.toString())}
-                className={cn(
-                  "h-9 w-9 rounded-md text-xs font-medium transition-all",
-                  rir === v.toString()
-                    ? "bg-primary text-primary-foreground shadow-sm scale-105"
-                    : "bg-muted text-muted-foreground hover:bg-accent active:scale-95"
-                )}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
         <Button
           className="h-11 px-5 ml-auto font-semibold"
           onClick={handleLog}
@@ -173,15 +154,32 @@ export function ActiveSetRow({
         </Button>
       </div>
 
-      {/* Set type selector */}
-      <div className="flex items-center gap-1 pl-7">
+      {/* Row 2: RIR buttons + Set type pills */}
+      <div className="flex items-center gap-1.5 pl-7">
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mr-0.5">RIR</span>
+        {[0, 1, 2, 3, 4].map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setRir(v.toString())}
+            className={cn(
+              "h-8 w-8 rounded-md text-xs font-medium transition-all",
+              rir === v.toString()
+                ? "bg-primary text-primary-foreground shadow-sm scale-105"
+                : "bg-muted text-muted-foreground hover:bg-accent active:scale-95"
+            )}
+          >
+            {v}
+          </button>
+        ))}
+        <span className="w-px h-4 bg-border mx-1" />
         {(["normal", "myorep", "dropset"] as const).map((type) => (
           <button
             key={type}
             type="button"
             onClick={() => setSetType(type)}
             className={cn(
-              "px-2.5 py-1 rounded-full text-[11px] font-medium transition-all",
+              "px-2 py-1 rounded-full text-[11px] font-medium transition-all",
               setType === type
                 ? type === "myorep"
                   ? "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400"
@@ -191,7 +189,7 @@ export function ActiveSetRow({
                 : "text-muted-foreground hover:bg-muted"
             )}
           >
-            {type === "normal" ? "Normal" : type === "myorep" ? "Myo-Rep" : "Drop Set"}
+            {type === "normal" ? "Normal" : type === "myorep" ? "Myo" : "Drop"}
           </button>
         ))}
       </div>

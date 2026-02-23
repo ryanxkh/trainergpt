@@ -200,15 +200,18 @@ function ToolResultCard({
     );
   }
 
-  // prescribeWorkout — show workout card
+  // prescribeWorkout — show workout card (only on success)
   if (toolName === "prescribeWorkout" && result) {
     const r = result as {
-      sessionId: number;
-      sessionName: string;
-      exerciseCount: number;
-      totalSets: number;
-      message: string;
+      success: boolean;
+      sessionId?: number;
+      sessionName?: string;
+      exerciseCount?: number;
+      totalSets?: number;
+      message?: string;
+      error?: string;
     };
+    if (!r.success) return null;
     return (
       <Card className="my-2 p-3 bg-background">
         <div className="flex items-center justify-between">

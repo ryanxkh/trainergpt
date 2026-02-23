@@ -190,6 +190,8 @@ function ToolResultCard({
       getExerciseLibrary: "Searching exercises...",
       prescribeWorkout: "Creating workout...",
       logWorkoutSet: "Logging set...",
+      completeWorkoutSession: "Completing session...",
+      updateUserProfile: "Updating your profile...",
     };
     return (
       <div className="my-1 text-xs text-muted-foreground italic">
@@ -244,6 +246,42 @@ function ToolResultCard({
         <Check className="h-3 w-3" />
         Set {r.setNumber}: {r.exercise} {r.weight}lbs x {r.reps}
         {r.rir !== null && r.rir !== undefined ? ` @ ${r.rir} RIR` : ""}
+      </Badge>
+    );
+  }
+
+  // completeWorkoutSession — show session summary badge
+  if (toolName === "completeWorkoutSession" && result) {
+    const r = result as {
+      success: boolean;
+      sessionName?: string;
+      status?: string;
+      durationMinutes?: number | null;
+      totalSets?: number;
+    };
+    if (!r.success) return null;
+    return (
+      <Badge variant="secondary" className="my-1 gap-1">
+        <Check className="h-3 w-3" />
+        {r.sessionName} {r.status === "completed" ? "completed" : "abandoned"}
+        {r.durationMinutes ? ` (${r.durationMinutes}min)` : ""} — {r.totalSets} sets
+      </Badge>
+    );
+  }
+
+  // updateUserProfile — show profile update badge
+  if (toolName === "updateUserProfile" && result) {
+    const r = result as {
+      success: boolean;
+      updatedFields?: string[];
+      landmarksReSeeded?: boolean;
+    };
+    if (!r.success) return null;
+    return (
+      <Badge variant="secondary" className="my-1 gap-1">
+        <Check className="h-3 w-3" />
+        Profile updated: {r.updatedFields?.join(", ")}
+        {r.landmarksReSeeded ? " (volume landmarks re-seeded)" : ""}
       </Badge>
     );
   }

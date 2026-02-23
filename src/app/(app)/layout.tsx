@@ -1,12 +1,31 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Dumbbell, LogOut } from "lucide-react";
+import { eq } from "drizzle-orm";
 import { auth, signOut } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav } from "./_components/sidebar-nav";
 import { MobileNav } from "./_components/mobile-nav";
+
+async function OnboardingGuard() {
+  const session = await auth();
+  if (session?.user?.id) {
+    const userId = parseInt(session.user.id as string);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { onboardingComplete: true },
+    });
+    if (!user?.onboardingComplete) {
+      redirect("/onboard");
+    }
+  }
+  return null;
+}
 
 async function UserSection() {
   const session = await auth();
@@ -43,6 +62,9 @@ async function UserSection() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
+      <Suspense>
+        <OnboardingGuard />
+      </Suspense>
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 border-r bg-muted/40 md:flex md:flex-col">
         <div className="flex h-16 items-center border-b px-4">

@@ -4,9 +4,11 @@ import { z } from "zod";
 import { COACH_SYSTEM_PROMPT, ADVANCED_COACHING_ADDENDUM } from "@/lib/ai";
 import { db } from "@/lib/db";
 import {
+  users,
   exercises,
   exerciseSets,
   workoutSessions,
+  userVolumeLandmarks,
 } from "@/lib/db/schema";
 import { eq, desc, and, ilike, sql } from "drizzle-orm";
 import { requireUserId } from "@/lib/auth-utils";
@@ -19,6 +21,7 @@ import {
 } from "@/lib/cache";
 import { aiModel, enableAdvancedCoaching } from "@/lib/flags";
 import { revalidatePath } from "next/cache";
+import { getVolumeLandmarksByLevel } from "@/lib/volume-landmarks";
 
 export async function POST(req: Request) {
   const userId = await requireUserId();
@@ -706,6 +709,79 @@ export async function POST(req: Request) {
             exercises: Array.from(exerciseMap.entries()).map(
               ([name, sets]) => ({ exercise: name, sets })
             ),
+          };
+        },
+      }),
+
+      updateUserProfile: tool({
+        description:
+          "Update the user's profile settings. Only call when the user explicitly requests a change (e.g. 'switch to home gym', 'I'm advanced now'). If experienceLevel changes, volume landmarks are re-seeded.",
+        inputSchema: z.object({
+          experienceLevel: z
+            .enum(["beginner", "intermediate", "advanced"])
+            .optional()
+            .describe("New experience level"),
+          trainingAgeMonths: z
+            .number()
+            .optional()
+            .describe("Training age in months"),
+          availableTrainingDays: z
+            .number()
+            .optional()
+            .describe("Number of training days per week (2-6)"),
+          preferredSplit: z
+            .enum(["full_body", "upper_lower", "push_pull_legs", "custom"])
+            .optional()
+            .describe("Preferred training split"),
+          equipmentAccess: z
+            .enum(["home", "apartment", "commercial", "specialty"])
+            .optional()
+            .describe("Gym / equipment access level"),
+        }),
+        execute: async ({
+          experienceLevel,
+          trainingAgeMonths,
+          availableTrainingDays,
+          preferredSplit,
+          equipmentAccess,
+        }) => {
+          // Build update object from provided fields only
+          const updates: Record<string, unknown> = { updatedAt: new Date() };
+          if (experienceLevel !== undefined) updates.experienceLevel = experienceLevel;
+          if (trainingAgeMonths !== undefined) updates.trainingAgeMonths = trainingAgeMonths;
+          if (availableTrainingDays !== undefined) updates.availableTrainingDays = availableTrainingDays;
+          if (preferredSplit !== undefined) updates.preferredSplit = preferredSplit;
+          if (equipmentAccess !== undefined) updates.equipmentAccess = equipmentAccess;
+
+          await db.update(users).set(updates).where(eq(users.id, userId));
+
+          // Re-seed volume landmarks if experience level changed
+          if (experienceLevel) {
+            await db
+              .delete(userVolumeLandmarks)
+              .where(eq(userVolumeLandmarks.userId, userId));
+
+            const landmarks = getVolumeLandmarksByLevel(experienceLevel);
+            await db.insert(userVolumeLandmarks).values(
+              landmarks.map((l) => ({
+                userId,
+                muscleGroup: l.muscleGroup,
+                mev: l.mev,
+                mav: l.mav,
+                mrv: l.mrv,
+              }))
+            );
+          }
+
+          await invalidateCache(userId, ["profile", "volume"]);
+
+          // Return updated profile for confirmation
+          const profile = await getCachedProfile(userId);
+          return {
+            success: true,
+            updatedFields: Object.keys(updates).filter((k) => k !== "updatedAt"),
+            profile: profile?.profile ?? null,
+            landmarksReSeeded: !!experienceLevel,
           };
         },
       }),

@@ -49,6 +49,13 @@ export const sessionStatusEnum = pgEnum("session_status", [
   "abandoned",
 ]);
 
+export const equipmentAccessEnum = pgEnum("equipment_access", [
+  "home",
+  "apartment",
+  "commercial",
+  "specialty",
+]);
+
 // ─── Users ──────────────────────────────────────────────────────────
 
 export const users = pgTable("users", {
@@ -60,6 +67,8 @@ export const users = pgTable("users", {
   trainingAgeMonths: integer("training_age_months").default(0),
   availableTrainingDays: integer("available_training_days").default(4),
   preferredSplit: splitTypeEnum("preferred_split").default("upper_lower"),
+  equipmentAccess: equipmentAccessEnum("equipment_access").default("commercial"),
+  onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

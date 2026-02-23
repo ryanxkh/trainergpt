@@ -115,6 +115,7 @@ export type ProfileData = {
     trainingAgeMonths: number | null;
     availableTrainingDays: number | null;
     preferredSplit: string | null;
+    equipmentAccess: string | null;
   };
   volumeLandmarks: Record<string, { mev: number; mav: number; mrv: number }>;
   activeMesocycle: {
@@ -158,6 +159,7 @@ export async function getCachedProfile(userId: number): Promise<ProfileData | nu
       trainingAgeMonths: user.trainingAgeMonths,
       availableTrainingDays: user.availableTrainingDays,
       preferredSplit: user.preferredSplit,
+      equipmentAccess: user.equipmentAccess,
     },
     volumeLandmarks: landmarkMap,
     activeMesocycle: activeMeso

@@ -448,6 +448,20 @@ export async function POST(req: Request) {
             .describe("Array of exercises to prescribe"),
         }),
         execute: async ({ sessionName, exercises: prescribedExercises }) => {
+          // ── Guard: check for existing active session ──
+          const existingActive = await db.query.workoutSessions.findFirst({
+            where: and(
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "active"),
+            ),
+          });
+          if (existingActive) {
+            return {
+              success: false,
+              error: `You already have an active session: "${existingActive.sessionName}". Complete or abandon it before starting a new one.`,
+            };
+          }
+
           // ── Verification step: validate before inserting ──
 
           // 1. Validate exercise IDs exist
@@ -552,15 +566,16 @@ export async function POST(req: Request) {
             .describe("Set type: normal (default), myorep (myo-rep match set), or dropset"),
         }),
         execute: async ({ exerciseName, weight, reps, rir, setType }) => {
-          // Find active session (no durationMinutes = still in progress)
-          const activeSessions = await db.query.workoutSessions.findMany({
-            where: eq(workoutSessions.userId, userId),
+          // Find active session
+          const activeSession = await db.query.workoutSessions.findFirst({
+            where: and(
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "active"),
+            ),
             orderBy: [desc(workoutSessions.date)],
-            limit: 1,
           });
 
-          const activeSession = activeSessions[0];
-          if (!activeSession || activeSession.durationMinutes !== null) {
+          if (!activeSession) {
             return {
               success: false,
               error:
@@ -619,6 +634,78 @@ export async function POST(req: Request) {
             weight,
             reps,
             rir: rir ?? null,
+          };
+        },
+      }),
+
+      completeWorkoutSession: tool({
+        description:
+          "Mark the user's active workout session as completed or abandoned. Use when the user says they're done or wants to stop early.",
+        inputSchema: z.object({
+          abandoned: z
+            .boolean()
+            .default(false)
+            .describe("True if the user is stopping early without finishing"),
+          postNotes: z
+            .string()
+            .optional()
+            .describe("Optional notes about the session"),
+        }),
+        execute: async ({ abandoned, postNotes }) => {
+          const activeSession = await db.query.workoutSessions.findFirst({
+            where: and(
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "active"),
+            ),
+            with: {
+              sets: {
+                with: { exercise: true },
+              },
+            },
+          });
+
+          if (!activeSession) {
+            return {
+              success: false,
+              error: "No active workout session to complete.",
+            };
+          }
+
+          const newStatus = abandoned ? "abandoned" : "completed";
+          const durationMinutes = abandoned
+            ? null
+            : Math.round(
+                (Date.now() - new Date(activeSession.date).getTime()) / 60000
+              );
+
+          await db
+            .update(workoutSessions)
+            .set({
+              status: newStatus,
+              durationMinutes,
+              postNotes: postNotes ?? null,
+            })
+            .where(eq(workoutSessions.id, activeSession.id));
+
+          await invalidateCache(userId, ["volume"]);
+          revalidatePath("/workout", "page");
+
+          // Build summary
+          const exerciseMap = new Map<string, number>();
+          for (const set of activeSession.sets) {
+            const name = set.exercise.name;
+            exerciseMap.set(name, (exerciseMap.get(name) ?? 0) + 1);
+          }
+
+          return {
+            success: true,
+            sessionName: activeSession.sessionName,
+            status: newStatus,
+            durationMinutes,
+            totalSets: activeSession.sets.length,
+            exercises: Array.from(exerciseMap.entries()).map(
+              ([name, sets]) => ({ exercise: name, sets })
+            ),
           };
         },
       }),

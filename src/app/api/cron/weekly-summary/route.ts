@@ -6,7 +6,7 @@ import {
   workoutSessions,
   userVolumeLandmarks,
 } from "@/lib/db/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, sql, isNotNull, lte } from "drizzle-orm";
 import { setWeeklySummary, type WeeklySummary } from "@/lib/cache";
 
 export async function GET(req: Request) {
@@ -40,7 +40,10 @@ export async function GET(req: Request) {
       .where(
         and(
           eq(workoutSessions.userId, user.id),
-          gte(workoutSessions.date, monday)
+          gte(workoutSessions.date, monday),
+          eq(workoutSessions.status, "completed"),
+          isNotNull(exerciseSets.rir),
+          lte(exerciseSets.rir, 4),
         )
       )
       .groupBy(exercises.muscleGroups);

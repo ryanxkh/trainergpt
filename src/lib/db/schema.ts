@@ -43,12 +43,19 @@ export const movementPatternEnum = pgEnum("movement_pattern", [
   "carry",
 ]);
 
+export const sessionStatusEnum = pgEnum("session_status", [
+  "active",
+  "completed",
+  "abandoned",
+]);
+
 // ─── Users ──────────────────────────────────────────────────────────
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: text("name"),
+  passwordHash: text("password_hash"),
   experienceLevel: experienceLevelEnum("experience_level").default("intermediate"),
   trainingAgeMonths: integer("training_age_months").default(0),
   availableTrainingDays: integer("available_training_days").default(4),
@@ -123,6 +130,7 @@ export const workoutSessions = pgTable("workout_sessions", {
     restSeconds: number;
   }[]>(),
   durationMinutes: integer("duration_minutes"),
+  status: sessionStatusEnum("status").default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

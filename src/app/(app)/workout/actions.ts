@@ -7,7 +7,7 @@ import {
   exercises,
   mesocycles,
 } from "@/lib/db/schema";
-import { eq, asc, and, ne, isNotNull, inArray, desc } from "drizzle-orm";
+import { eq, asc, and, ne, inArray, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth-utils";
 import { invalidateCache } from "@/lib/cache";
@@ -118,6 +118,7 @@ export async function completeWorkout(
       .set({
         postNotes: data.postNotes ?? null,
         durationMinutes: data.durationMinutes ?? null,
+        status: "completed",
       })
       .where(eq(workoutSessions.id, sessionId))
       .returning();
@@ -150,7 +151,10 @@ export async function getSessionSets(sessionId: number) {
 export async function getActiveSession() {
   const userId = await requireUserId();
   const sessions = await db.query.workoutSessions.findMany({
-    where: eq(workoutSessions.userId, userId),
+    where: and(
+      eq(workoutSessions.userId, userId),
+      eq(workoutSessions.status, "active"),
+    ),
     orderBy: (ws, { desc }) => [desc(ws.date)],
     limit: 1,
     with: {
@@ -163,12 +167,7 @@ export async function getActiveSession() {
     },
   });
 
-  const session = sessions[0];
-  if (!session || session.durationMinutes !== null) {
-    return null;
-  }
-
-  return session;
+  return sessions[0] ?? null;
 }
 
 // ─── New: Previous performance for "last time" data ──────────────
@@ -199,7 +198,7 @@ export async function getPreviousPerformance(
       and(
         eq(workoutSessions.userId, userId),
         ne(workoutSessions.id, currentSessionId),
-        isNotNull(workoutSessions.durationMinutes),
+        eq(workoutSessions.status, "completed"),
         inArray(exerciseSets.exerciseId, exerciseIds),
       )
     )

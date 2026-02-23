@@ -8,7 +8,7 @@ import {
   userVolumeLandmarks,
   mesocycles,
 } from "./db/schema";
-import { eq, and, gte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, sql, desc, isNotNull, lte } from "drizzle-orm";
 
 // TTL constants (seconds)
 const TTL = {
@@ -72,7 +72,10 @@ export async function getCachedVolume(userId: number): Promise<VolumeData> {
     .where(
       and(
         eq(workoutSessions.userId, userId),
-        gte(workoutSessions.date, monday)
+        gte(workoutSessions.date, monday),
+        eq(workoutSessions.status, "completed"),
+        isNotNull(exerciseSets.rir),
+        lte(exerciseSets.rir, 4),
       )
     )
     .groupBy(exercises.muscleGroups);

@@ -18,10 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
-import { Calendar, Timer, Dumbbell, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { VolumeChart } from "./_components/volume-chart";
-import { ShareButton } from "./_components/share-button";
+import { HistorySessionCard } from "./_components/session-card";
 import { showProgressCharts } from "@/lib/flags";
 
 async function getUserId() {
@@ -68,59 +67,21 @@ async function SessionHistory() {
           (sum, s) => sum + s.weight * s.reps,
           0
         );
-        const isComplete = session.durationMinutes !== null;
 
         return (
-          <Link key={session.id} href={`/workout/${session.id}`}>
-            <Card className="hover:bg-muted/50 transition-colors">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{session.sessionName}</p>
-                      {!isComplete && (
-                        <Badge variant="secondary" className="text-xs">
-                          In Progress
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(session.date).toLocaleDateString()}
-                      </span>
-                      {session.durationMinutes && (
-                        <span className="flex items-center gap-1">
-                          <Timer className="h-3 w-3" />
-                          {session.durationMinutes}m
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Dumbbell className="h-3 w-3" />
-                        {session.sets.length} sets
-                      </span>
-                      <span>
-                        {totalVolume.toLocaleString()} lbs
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {exerciseNames.slice(0, 5).map((name) => (
-                        <Badge key={name} variant="outline" className="text-xs">
-                          {name}
-                        </Badge>
-                      ))}
-                      {exerciseNames.length > 5 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{exerciseNames.length - 5}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <ShareButton sessionId={session.id} />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          <HistorySessionCard
+            key={session.id}
+            session={{
+              id: session.id,
+              sessionName: session.sessionName,
+              date: session.date.toISOString(),
+              durationMinutes: session.durationMinutes,
+              setCount: session.sets.length,
+              totalVolume,
+              exerciseNames,
+              status: session.status,
+            }}
+          />
         );
       })}
     </div>

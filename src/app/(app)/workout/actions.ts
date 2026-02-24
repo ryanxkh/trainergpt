@@ -357,6 +357,93 @@ export async function replaceExercise(
   }
 }
 
+// ─── Delete Session ──────────────────────────────────────────────────
+
+export async function deleteSession(
+  sessionId: number
+): Promise<ActionResult<null>> {
+  try {
+    const userId = await requireUserId();
+
+    // Verify ownership
+    const session = await db.query.workoutSessions.findFirst({
+      where: and(
+        eq(workoutSessions.id, sessionId),
+        eq(workoutSessions.userId, userId),
+      ),
+    });
+
+    if (!session) {
+      return { success: false, error: "Session not found." };
+    }
+
+    // Delete all sets first, then the session
+    await db.delete(exerciseSets).where(eq(exerciseSets.sessionId, sessionId));
+    await db.delete(workoutSessions).where(eq(workoutSessions.id, sessionId));
+
+    revalidatePath("/history", "page");
+    revalidatePath("/workout", "page");
+    revalidatePath("/program", "page");
+    await invalidateCache(userId, ["volume"]);
+
+    return { success: true, data: null };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to delete session",
+    };
+  }
+}
+
+// ─── Update Set ──────────────────────────────────────────────────────
+
+export async function updateSet(
+  setId: number,
+  data: { weight?: number; reps?: number; rir?: number }
+): Promise<ActionResult<null>> {
+  try {
+    const userId = await requireUserId();
+
+    // Verify ownership via session
+    const set = await db.query.exerciseSets.findFirst({
+      where: eq(exerciseSets.id, setId),
+      with: { session: true },
+    });
+
+    if (!set || set.session.userId !== userId) {
+      return { success: false, error: "Set not found." };
+    }
+
+    // Build update object from provided fields
+    const updates: Record<string, number> = {};
+    if (data.weight !== undefined) updates.weight = data.weight;
+    if (data.reps !== undefined) updates.reps = data.reps;
+    if (data.rir !== undefined) updates.rir = data.rir;
+
+    if (Object.keys(updates).length === 0) {
+      return { success: true, data: null };
+    }
+
+    await db
+      .update(exerciseSets)
+      .set(updates)
+      .where(eq(exerciseSets.id, setId));
+
+    revalidatePath("/history", "page");
+    revalidatePath(`/workout/${set.sessionId}`, "page");
+    await invalidateCache(userId, ["volume"]);
+
+    return { success: true, data: null };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to update set",
+    };
+  }
+}
+
+// ─── Mesocycle Context ───────────────────────────────────────────────
+
 export async function getActiveMesocycleContext(): Promise<MesocycleContext | null> {
   const userId = await requireUserId();
 

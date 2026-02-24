@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { ProgramGrid, type GridCell, type WeekHeader } from "./program-grid";
 import { WeekDetail } from "./session-detail";
 import { VolumeOverview } from "./volume-overview";
+import { GenerateMesocycleForm } from "./generate-form";
 import type { ProgramData } from "../actions";
 
 type Props = {
@@ -155,10 +159,71 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
     return vol;
   }, [sessions, selectedWeek]);
 
+  // Legacy mesocycle without a session plan (created before Phase 3)
   if (!mesocycle.sessionPlan) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>No session plan available for this mesocycle.</p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {mesocycle.name}
+          </h1>
+          <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+            <span className="capitalize">
+              {mesocycle.splitType.replace(/_/g, " ")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              Week {mesocycle.currentWeek} / {mesocycle.totalWeeks}
+            </span>
+          </div>
+        </div>
+
+        {/* Existing sessions */}
+        {sessions.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Sessions
+            </h3>
+            <div className="space-y-2">
+              {sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-lg border bg-card px-4 py-3"
+                >
+                  <div>
+                    <span className="text-sm font-medium">{s.sessionName}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {s.prescribedExercises?.length ?? 0} exercises
+                    </span>
+                  </div>
+                  <Badge
+                    variant={s.status === "completed" ? "secondary" : "outline"}
+                    className="text-[10px] capitalize"
+                  >
+                    {s.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA to create a structured program */}
+        <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">
+            This mesocycle was created without a structured session plan.
+            Generate a new program to see the full grid with exercises, sets, and RIR targets.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link href="/coach">
+              <Button variant="outline" size="sm">
+                <MessageSquare className="mr-2 h-3.5 w-3.5" />
+                Ask Coach
+              </Button>
+            </Link>
+            <GenerateMesocycleForm />
+          </div>
+        </div>
       </div>
     );
   }

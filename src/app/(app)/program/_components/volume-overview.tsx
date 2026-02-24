@@ -29,7 +29,7 @@ export function VolumeOverview({ volumePlan, weekNumber, actualVolume, landmarks
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Volume This Week</h3>
+      <h3 className="text-sm font-semibold">Volume — Week {weekNumber}</h3>
       <div className="space-y-2">
         {sorted.map((group) => {
           const actual = actualVolume[group] ?? 0;

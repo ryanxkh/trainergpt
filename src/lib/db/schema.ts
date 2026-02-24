@@ -44,6 +44,7 @@ export const movementPatternEnum = pgEnum("movement_pattern", [
 ]);
 
 export const sessionStatusEnum = pgEnum("session_status", [
+  "planned",
   "active",
   "completed",
   "abandoned",
@@ -105,6 +106,7 @@ export const mesocycles = pgTable("mesocycles", {
   volumePlan: jsonb("volume_plan").$type<
     Record<string, Record<string, number>>
   >(), // { "week_1": { "chest": 10, "back": 12 } }
+  sessionPlan: jsonb("session_plan").$type<import("@/lib/program-utils").SessionPlan>(),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -139,6 +141,8 @@ export const workoutSessions = pgTable("workout_sessions", {
     restSeconds: number;
   }[]>(),
   durationMinutes: integer("duration_minutes"),
+  isDeload: boolean("is_deload").default(false),
+  dayNumber: integer("day_number"), // 1=Mon..7=Sun, nullable for backward compat
   status: sessionStatusEnum("status").default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

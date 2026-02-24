@@ -192,6 +192,8 @@ function ToolResultCard({
       logWorkoutSet: "Logging set...",
       completeWorkoutSession: "Completing session...",
       updateUserProfile: "Updating your profile...",
+      createProgram: "Generating your program...",
+      advanceWeek: "Advancing to next week...",
     };
     return (
       <div className="my-1 text-xs text-muted-foreground italic">
@@ -268,6 +270,57 @@ function ToolResultCard({
         <Check className="h-3 w-3" />
         {r.sessionName} {r.status === "completed" ? "completed" : "abandoned"}
         {r.durationMinutes ? ` (${r.durationMinutes}min)` : ""} — {r.totalSets} sets
+      </Badge>
+    );
+  }
+
+  // createProgram — show program card
+  if (toolName === "createProgram" && result) {
+    const r = result as {
+      success: boolean;
+      mesocycleId?: number;
+      name?: string;
+      totalWeeks?: number;
+      week1Sessions?: { sessionName: string }[];
+      error?: string;
+    };
+    if (!r.success) return null;
+    return (
+      <Card className="my-2 p-3 bg-background">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-sm">{r.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {r.totalWeeks} weeks, {r.week1Sessions?.length ?? 0} sessions this week
+            </p>
+          </div>
+          <Link href={`/program/${r.mesocycleId}`}>
+            <Button size="sm" variant="outline">
+              View Program
+              <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
+  // advanceWeek — show week advancement badge
+  if (toolName === "advanceWeek" && result) {
+    const r = result as {
+      success: boolean;
+      completed?: boolean;
+      currentWeek?: number;
+      isDeload?: boolean;
+      mesocycleName?: string;
+    };
+    if (!r.success) return null;
+    return (
+      <Badge variant="secondary" className="my-1 gap-1">
+        <Check className="h-3 w-3" />
+        {r.completed
+          ? `${r.mesocycleName} completed!`
+          : `Advanced to Week ${r.currentWeek}${r.isDeload ? " (Deload)" : ""}`}
       </Badge>
     );
   }

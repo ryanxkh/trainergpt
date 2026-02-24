@@ -249,9 +249,15 @@ export async function setDeloadRecommendation(userId: number, data: DeloadRecomm
 
 // ─── Cache Invalidation ────────────────────────────────────────────
 
+// ─── Program Cache ────────────────────────────────────────────────
+
+function programKey(userId: number) {
+  return `cache:program:${userId}`;
+}
+
 export async function invalidateCache(
   userId: number,
-  keys: ("volume" | "profile" | "exercises" | "weekly-summary" | "deload")[]
+  keys: ("volume" | "profile" | "exercises" | "weekly-summary" | "deload" | "program")[]
 ) {
   const keyMap = {
     volume: volumeKey(userId),
@@ -259,6 +265,7 @@ export async function invalidateCache(
     exercises: exerciseListKey(),
     "weekly-summary": weeklySummaryKey(userId),
     deload: deloadKey(userId),
+    program: programKey(userId),
   };
 
   const toDelete = keys.map((k) => keyMap[k]);

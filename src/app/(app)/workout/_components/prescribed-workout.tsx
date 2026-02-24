@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Check, Timer, CheckCircle2, StickyNote } from "lucide-react";
+import { Check, Timer, CheckCircle2, StickyNote, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { completeWorkout, getExerciseDetails, getPreviousPerformance } from "../actions";
 import { MuscleGroupBadge } from "./muscle-group-badge";
 import { RestTimerBanner } from "./rest-timer-banner";
@@ -32,6 +33,7 @@ type Props = {
   mesocycleContext: MesocycleContext | null;
   exerciseDetails: Record<number, ExerciseDetail>;
   previousPerformance: Record<number, PreviousSetData[]>;
+  isDeload?: boolean;
 };
 
 export default function PrescribedWorkout({
@@ -45,6 +47,7 @@ export default function PrescribedWorkout({
   mesocycleContext,
   exerciseDetails,
   previousPerformance,
+  isDeload,
 }: Props) {
   const [exercises, setExercises] = useState(prescribedExercises);
   const [exerciseDetailsState, setExerciseDetailsState] = useState(exerciseDetails);
@@ -185,9 +188,17 @@ export default function PrescribedWorkout({
                   : ""}
               </p>
             )}
-            <h1 className="text-xl font-bold tracking-tight leading-tight">
-              {sessionName}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight leading-tight">
+                {sessionName}
+              </h1>
+              {isDeload && (
+                <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+                  <Zap className="mr-1 h-3 w-3" />
+                  Deload
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3 shrink-0 pt-0.5">
             <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2.5 py-1">
@@ -213,6 +224,13 @@ export default function PrescribedWorkout({
           />
         </div>
       </div>
+
+      {/* ── Deload Note ─────────────────────────────────────── */}
+      {isDeload && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 rounded-md px-3 py-2">
+          Deload week — reduced volume for recovery. Same exercises, fewer sets.
+        </p>
+      )}
 
       {/* ── Rest Timer Banner ───────────────────────────────── */}
       {enableTimer && restTimer !== null && (

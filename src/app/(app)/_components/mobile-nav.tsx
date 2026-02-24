@@ -2,12 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, Dumbbell, BookOpen, History } from "lucide-react";
+import { MessageSquare, Dumbbell, CalendarDays, BookOpen, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/coach", label: "Coach", icon: MessageSquare },
   { href: "/workout", label: "Today", icon: Dumbbell },
+  { href: "/program", label: "Program", icon: CalendarDays },
   { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/history", label: "History", icon: History },
 ];

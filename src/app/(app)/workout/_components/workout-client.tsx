@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   Play,
   Plus,
@@ -53,6 +54,10 @@ import {
   getExerciseDetails,
   getActiveMesocycleContext,
 } from "../actions";
+import {
+  getPlannedSessions,
+  startPlannedSession,
+} from "@/app/(app)/program/actions";
 import PrescribedWorkout from "./prescribed-workout";
 import type {
   PreviousSetData,
@@ -106,8 +111,26 @@ type Session = {
   } | null;
   prescribedExercises: PrescribedExercise[] | null;
   durationMinutes: number | null;
+  isDeload: boolean | null;
   sets: LoggedSet[];
 };
+
+// ─── Types for planned sessions ─────────────────────────────────────
+
+type PlannedSessionData = {
+  mesocycleName: string;
+  currentWeek: number;
+  totalWeeks: number;
+  sessions: {
+    id: number;
+    sessionName: string;
+    status: string;
+    dayNumber: number | null;
+    isDeload: boolean | null;
+    exerciseCount: number;
+    exercisePreview: string[];
+  }[];
+} | null;
 
 // ─── No Workout State ───────────────────────────────────────────────
 
@@ -126,6 +149,111 @@ function NoWorkoutState() {
           Ask Coach for a Workout
         </Button>
       </Link>
+    </div>
+  );
+}
+
+// ─── Planned Sessions List ───────────────────────────────────────────
+
+const DAY_LABELS = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function PlannedSessionList({
+  data,
+  onSessionStarted,
+}: {
+  data: NonNullable<PlannedSessionData>;
+  onSessionStarted: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+
+  // Find the best session to suggest (first planned one by day number)
+  const nextPlanned = data.sessions.find((s) => s.status === "planned");
+
+  const handleStart = (sessionId: number) => {
+    startTransition(async () => {
+      const result = await startPlannedSession(sessionId);
+      if (result.success) {
+        toast.success("Session started!");
+        onSessionStarted();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+          {data.mesocycleName} &mdash; Week {data.currentWeek} / {data.totalWeeks}
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">This Week</h1>
+      </div>
+
+      <div className="space-y-3">
+        {data.sessions.map((session) => {
+          const dayLabel = session.dayNumber ? DAY_LABELS[session.dayNumber] : "";
+          const isNext = nextPlanned?.id === session.id;
+          const isStartable = session.status === "planned";
+          const isDone = session.status === "completed" || session.status === "abandoned";
+
+          return (
+            <Card
+              key={session.id}
+              className={cn(
+                "transition-all",
+                isDone && "opacity-60",
+                isNext && "border-primary/50",
+              )}
+            >
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {dayLabel && (
+                      <span className="text-xs font-medium text-muted-foreground uppercase">
+                        {dayLabel}
+                      </span>
+                    )}
+                    <span className="font-semibold text-sm">{session.sessionName}</span>
+                    {session.isDeload && (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 text-[10px]">
+                        Deload
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {session.exercisePreview.join(", ")}
+                    {session.exerciseCount > 3 && ` +${session.exerciseCount - 3} more`}
+                    {" · "}{session.exerciseCount} exercises
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  {isDone && (
+                    <Badge variant="secondary" className="text-green-700 dark:text-green-400">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      Done
+                    </Badge>
+                  )}
+                  {isStartable && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStart(session.id)}
+                      disabled={isPending}
+                      variant={isNext ? "default" : "outline"}
+                    >
+                      <Play className="mr-1 h-3 w-3" />
+                      {isPending ? "..." : "Start"}
+                    </Button>
+                  )}
+                  {session.status === "active" && (
+                    <Badge>Active</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -694,16 +822,20 @@ export default function WorkoutPage({
   const [previousPerformance, setPreviousPerformance] = useState<
     Record<number, PreviousSetData[]>
   >({});
+  const [plannedSessions, setPlannedSessions] = useState<PlannedSessionData>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function load() {
-      const [exercises, activeSession, mesoCtx] = await Promise.all([
+      const [exercises, activeSession, mesoCtx, planned] = await Promise.all([
         getExerciseList(),
         getActiveSession(),
         getActiveMesocycleContext(),
+        getPlannedSessions(),
       ]);
       setExerciseList(exercises as Exercise[]);
       setMesocycleContext(mesoCtx);
+      setPlannedSessions(planned);
 
       if (activeSession) {
         const sessionData = {
@@ -729,11 +861,13 @@ export default function WorkoutPage({
           setExerciseDetails(details);
           setPreviousPerformance(previous);
         }
+      } else {
+        setSession(null);
       }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [refreshKey]);
 
   const handleStart = useCallback(
     (name: string, readiness: Session["preReadiness"]) => {
@@ -793,6 +927,7 @@ export default function WorkoutPage({
         mesocycleContext={mesocycleContext}
         exerciseDetails={exerciseDetails}
         previousPerformance={previousPerformance}
+        isDeload={session.isDeload ?? false}
       />
     );
   }
@@ -805,6 +940,19 @@ export default function WorkoutPage({
         exerciseList={exerciseList}
         onComplete={handleComplete}
         enableTimer={enableTimer}
+      />
+    );
+  }
+
+  // No active session but planned sessions → show planned list
+  if (plannedSessions && plannedSessions.sessions.some((s) => s.status === "planned")) {
+    return (
+      <PlannedSessionList
+        data={plannedSessions}
+        onSessionStarted={() => {
+          setLoading(true);
+          setRefreshKey((k) => k + 1);
+        }}
       />
     );
   }

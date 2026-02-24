@@ -9,6 +9,7 @@ import {
   exerciseSets,
   workoutSessions,
   userVolumeLandmarks,
+  mesocycles,
 } from "@/lib/db/schema";
 import { eq, desc, and, ilike, sql } from "drizzle-orm";
 import { requireUserId } from "@/lib/auth-utils";
@@ -22,6 +23,12 @@ import {
 import { aiModel, enableAdvancedCoaching } from "@/lib/flags";
 import { revalidatePath } from "next/cache";
 import { getVolumeLandmarksByLevel } from "@/lib/volume-landmarks";
+import {
+  generateMesocyclePlan,
+  buildVolumePlan,
+  materializeWeekSessions,
+} from "@/lib/program-utils";
+import type { SessionPlan } from "@/lib/program-utils";
 
 export async function POST(req: Request) {
   const userId = await requireUserId();
@@ -449,8 +456,24 @@ export async function POST(req: Request) {
               })
             )
             .describe("Array of exercises to prescribe"),
+          mesocycleId: z
+            .number()
+            .optional()
+            .describe("Optional: link to a mesocycle"),
+          mesocycleWeek: z
+            .number()
+            .optional()
+            .describe("Optional: week number within the mesocycle"),
+          isDeload: z
+            .boolean()
+            .optional()
+            .describe("Optional: whether this is a deload session"),
+          dayNumber: z
+            .number()
+            .optional()
+            .describe("Optional: day of week (1=Mon..7=Sun)"),
         }),
-        execute: async ({ sessionName, exercises: prescribedExercises }) => {
+        execute: async ({ sessionName, exercises: prescribedExercises, mesocycleId, mesocycleWeek, isDeload, dayNumber }) => {
           // ── Guard: check for existing active session ──
           const existingActive = await db.query.workoutSessions.findFirst({
             where: and(
@@ -528,6 +551,10 @@ export async function POST(req: Request) {
               sessionName,
               date: new Date(),
               prescribedExercises,
+              ...(mesocycleId && { mesocycleId }),
+              ...(mesocycleWeek && { mesocycleWeek }),
+              ...(isDeload && { isDeload }),
+              ...(dayNumber && { dayNumber }),
             })
             .returning();
 
@@ -614,7 +641,7 @@ export async function POST(req: Request) {
 
           const setNumber = (existingSets[0]?.count ?? 0) + 1;
 
-          const [newSet] = await db
+          await db
             .insert(exerciseSets)
             .values({
               sessionId: activeSession.id,
@@ -624,8 +651,7 @@ export async function POST(req: Request) {
               reps,
               rir: rir ?? null,
               setType: setType ?? "normal",
-            })
-            .returning();
+            });
 
           await invalidateCache(userId, ["volume"]);
           revalidatePath("/workout", "page");
@@ -782,6 +808,189 @@ export async function POST(req: Request) {
             updatedFields: Object.keys(updates).filter((k) => k !== "updatedAt"),
             profile: profile?.profile ?? null,
             landmarksReSeeded: !!experienceLevel,
+          };
+        },
+      }),
+      createProgram: tool({
+        description:
+          "Generate a complete mesocycle training program. Creates the mesocycle, stores the full plan, and materializes week 1 sessions as planned. Call getUserProfile first to check for an existing active mesocycle.",
+        inputSchema: z.object({
+          splitType: z
+            .enum(["full_body", "upper_lower", "push_pull_legs", "custom"])
+            .optional()
+            .describe("Training split type (defaults to user preference)"),
+          trainingDays: z
+            .number()
+            .optional()
+            .describe("Training days per week (2-6, defaults to user preference)"),
+          focusAreas: z
+            .array(z.string())
+            .optional()
+            .describe("Muscle groups to prioritize with extra volume"),
+          totalWeeks: z
+            .number()
+            .optional()
+            .describe("Total mesocycle length in weeks (3-8, default 4-6)"),
+        }),
+        execute: async ({ splitType, trainingDays, focusAreas, totalWeeks }) => {
+          // Guard: check for existing active mesocycle
+          const activeMeso = await db.query.mesocycles.findFirst({
+            where: and(
+              eq(mesocycles.userId, userId),
+              eq(mesocycles.status, "active"),
+            ),
+          });
+
+          if (activeMeso) {
+            return {
+              success: false,
+              error: `You already have an active mesocycle: "${activeMeso.name}" (Week ${activeMeso.currentWeek}/${activeMeso.totalWeeks}). Complete or end it before creating a new one.`,
+              activeMesocycleId: activeMeso.id,
+            };
+          }
+
+          const plan = await generateMesocyclePlan({
+            userId,
+            splitType,
+            trainingDays,
+            focusAreas,
+            totalWeeks,
+          });
+
+          const sessionPlan: SessionPlan = { weeks: plan.weeks };
+
+          const [saved] = await db
+            .insert(mesocycles)
+            .values({
+              userId,
+              name: plan.name,
+              splitType: plan.splitType,
+              totalWeeks: plan.totalWeeks,
+              currentWeek: 1,
+              status: "active",
+              startDate: new Date(),
+              volumePlan: buildVolumePlan(plan.weeks),
+              sessionPlan,
+            })
+            .returning();
+
+          // Materialize week 1 sessions
+          const week1Sessions = await materializeWeekSessions({
+            mesocycleId: saved.id,
+            userId,
+            sessionPlan,
+            weekNumber: 1,
+          });
+
+          await invalidateCache(userId, ["profile"]);
+          revalidatePath("/program", "page");
+          revalidatePath("/workout", "page");
+
+          return {
+            success: true,
+            mesocycleId: saved.id,
+            name: plan.name,
+            splitType: plan.splitType,
+            totalWeeks: plan.totalWeeks,
+            week1Sessions,
+          };
+        },
+      }),
+
+      advanceWeek: tool({
+        description:
+          "Advance the active mesocycle to the next week. Materializes next week's sessions as planned. If all weeks are done, completes the mesocycle.",
+        inputSchema: z.object({
+          skipToWeek: z
+            .number()
+            .optional()
+            .describe("Optional: skip to a specific week number instead of incrementing by 1"),
+        }),
+        execute: async ({ skipToWeek }) => {
+          const activeMeso = await db.query.mesocycles.findFirst({
+            where: and(
+              eq(mesocycles.userId, userId),
+              eq(mesocycles.status, "active"),
+            ),
+          });
+
+          if (!activeMeso) {
+            return {
+              success: false,
+              error: "No active mesocycle to advance.",
+            };
+          }
+
+          // Check that current week sessions are completed/abandoned
+          const currentWeekSessions = await db.query.workoutSessions.findMany({
+            where: and(
+              eq(workoutSessions.mesocycleId, activeMeso.id),
+              eq(workoutSessions.mesocycleWeek, activeMeso.currentWeek),
+            ),
+          });
+
+          const incomplete = currentWeekSessions.filter(
+            (s) => s.status === "planned" || s.status === "active"
+          );
+          if (incomplete.length > 0) {
+            return {
+              success: false,
+              error: `${incomplete.length} session(s) in week ${activeMeso.currentWeek} are still incomplete: ${incomplete.map((s) => s.sessionName).join(", ")}. Complete or abandon them before advancing.`,
+            };
+          }
+
+          const nextWeek = skipToWeek ?? activeMeso.currentWeek + 1;
+
+          // If past total weeks, complete the mesocycle
+          if (nextWeek > activeMeso.totalWeeks) {
+            await db
+              .update(mesocycles)
+              .set({ status: "completed", endDate: new Date() })
+              .where(eq(mesocycles.id, activeMeso.id));
+
+            await invalidateCache(userId, ["profile"]);
+            revalidatePath("/program", "page");
+
+            return {
+              success: true,
+              completed: true,
+              mesocycleName: activeMeso.name,
+              totalWeeks: activeMeso.totalWeeks,
+              message: "Mesocycle completed! Time to plan the next block.",
+            };
+          }
+
+          // Advance week
+          await db
+            .update(mesocycles)
+            .set({ currentWeek: nextWeek })
+            .where(eq(mesocycles.id, activeMeso.id));
+
+          // Materialize sessions for the new week
+          const sessionPlan = activeMeso.sessionPlan as SessionPlan | null;
+          let sessions: { sessionId: number; sessionName: string; dayNumber: number }[] = [];
+
+          if (sessionPlan) {
+            sessions = await materializeWeekSessions({
+              mesocycleId: activeMeso.id,
+              userId,
+              sessionPlan,
+              weekNumber: nextWeek,
+            });
+          }
+
+          const weekData = sessionPlan?.weeks.find((w) => w.weekNumber === nextWeek);
+
+          await invalidateCache(userId, ["profile"]);
+          revalidatePath("/program", "page");
+          revalidatePath("/workout", "page");
+
+          return {
+            success: true,
+            completed: false,
+            currentWeek: nextWeek,
+            isDeload: weekData?.isDeload ?? false,
+            sessions,
           };
         },
       }),

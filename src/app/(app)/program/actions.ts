@@ -179,6 +179,51 @@ export async function startPlannedSession(
   return { success: true };
 }
 
+// ─── Complete Mesocycle ───────────────────────────────────────────────
+
+export async function completeMesocycle(
+  mesoId: number
+): Promise<{ success: boolean; error?: string }> {
+  const userId = await requireUserId();
+
+  const meso = await db.query.mesocycles.findFirst({
+    where: and(
+      eq(mesocycles.id, mesoId),
+      eq(mesocycles.userId, userId),
+    ),
+  });
+
+  if (!meso) {
+    return { success: false, error: "Mesocycle not found." };
+  }
+
+  if (meso.status !== "active") {
+    return { success: false, error: "Mesocycle is not active." };
+  }
+
+  // Mark mesocycle as completed
+  await db
+    .update(mesocycles)
+    .set({ status: "completed" })
+    .where(eq(mesocycles.id, mesoId));
+
+  // Abandon any remaining planned/active sessions
+  await db
+    .update(workoutSessions)
+    .set({ status: "abandoned" })
+    .where(
+      and(
+        eq(workoutSessions.mesocycleId, mesoId),
+        eq(workoutSessions.status, "planned"),
+      ),
+    );
+
+  revalidatePath("/program", "page");
+  revalidatePath("/workout", "page");
+
+  return { success: true };
+}
+
 // ─── Get Planned Sessions for Current Week ────────────────────────────
 
 export async function getPlannedSessions(): Promise<{

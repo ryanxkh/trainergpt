@@ -1,15 +1,26 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Calendar, MessageSquare } from "lucide-react";
+import { useState, useMemo, useTransition } from "react";
+import { Calendar, MessageSquare, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ProgramGrid, type GridCell, type WeekHeader } from "./program-grid";
 import { WeekDetail } from "./session-detail";
 import { VolumeOverview } from "./volume-overview";
 import { GenerateMesocycleForm } from "./generate-form";
 import type { ProgramData } from "../actions";
+import { completeMesocycle } from "../actions";
 
 type Props = {
   data: ProgramData;
@@ -19,6 +30,22 @@ type Props = {
 export function ProgramClient({ data, volumeLandmarks }: Props) {
   const { mesocycle, sessions } = data;
   const [selectedWeek, setSelectedWeek] = useState(mesocycle.currentWeek);
+  const [isPending, startTransition] = useTransition();
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const router = useRouter();
+
+  const handleCompleteMesocycle = () => {
+    startTransition(async () => {
+      const result = await completeMesocycle(mesocycle.id);
+      if (result.success) {
+        toast.success("Mesocycle completed");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to complete mesocycle");
+      }
+      setShowCompleteDialog(false);
+    });
+  };
 
   // Build grid data from sessionPlan (all weeks) + actual sessions (materialized)
   const { weeks, dayNumbers, cells } = useMemo(() => {
@@ -212,9 +239,18 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
           <p className="text-sm text-muted-foreground">
             This mesocycle was created without a structured session plan.
-            Generate a new program to see the full grid with exercises, sets, and RIR targets.
+            Complete it and generate a new program to see the full grid with exercises, sets, and RIR targets.
           </p>
           <div className="flex justify-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCompleteDialog(true)}
+              disabled={isPending}
+            >
+              <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+              Complete Mesocycle
+            </Button>
             <Link href="/coach">
               <Button variant="outline" size="sm">
                 <MessageSquare className="mr-2 h-3.5 w-3.5" />
@@ -224,6 +260,35 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
             <GenerateMesocycleForm />
           </div>
         </div>
+
+        {/* Complete Mesocycle Dialog */}
+        <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Complete mesocycle?</DialogTitle>
+              <DialogDescription>
+                This will mark &ldquo;{mesocycle.name}&rdquo; as completed and
+                abandon any remaining planned sessions. You can then generate a
+                new program.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCompleteDialog(false)}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCompleteMesocycle}
+                disabled={isPending}
+              >
+                {isPending ? "Completing..." : "Complete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

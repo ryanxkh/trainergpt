@@ -20,7 +20,7 @@ import {
   getDeloadRecommendation,
   invalidateCache,
 } from "@/lib/cache";
-import { aiModel, enableAdvancedCoaching } from "@/lib/flags";
+import { aiModel } from "@/lib/flags";
 import { revalidatePath } from "next/cache";
 import { getVolumeLandmarksByLevel } from "@/lib/volume-landmarks";
 import {
@@ -33,15 +33,10 @@ import type { SessionPlan } from "@/lib/program-utils";
 export async function POST(req: Request) {
   const userId = await requireUserId();
 
-  // Feature flags — resolved from Edge Config (no redeploy needed)
-  const [modelId, advancedCoaching] = await Promise.all([
-    aiModel(),
-    enableAdvancedCoaching(),
-  ]);
+  // Feature flag — model selection resolved from Edge Config (no redeploy needed)
+  const modelId = await aiModel();
 
-  const systemPrompt = advancedCoaching
-    ? `${COACH_SYSTEM_PROMPT}\n\n${ADVANCED_COACHING_ADDENDUM}`
-    : COACH_SYSTEM_PROMPT;
+  const systemPrompt = `${COACH_SYSTEM_PROMPT}\n\n${ADVANCED_COACHING_ADDENDUM}`;
 
   const { messages } = await req.json();
 
@@ -380,7 +375,7 @@ export async function POST(req: Request) {
             ),
         }),
         execute: async ({ muscleGroup, searchTerm, equipment }) => {
-          const allExercises = await getCachedExercises();
+          const allExercises = await getCachedExercises(userId);
 
           let filtered = allExercises;
 

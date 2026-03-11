@@ -1,17 +1,30 @@
-import { cacheLife } from "next/cache";
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: "Exercises",
+  description: "Browse the exercise library by muscle group.",
+};
 import { exercises } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Dumbbell, ChevronRight, Zap } from "lucide-react";
+import { Dumbbell, ChevronRight, Zap, User } from "lucide-react";
 import { ExerciseFilter } from "./_components/exercise-filter";
+import { CreateExerciseSheet } from "./_components/create-exercise-sheet";
+import { auth } from "@/lib/auth";
+import { or, isNull, eq } from "drizzle-orm";
 
-export default async function ExercisesPage() {
-  "use cache";
-  cacheLife("hours"); // Cached for ~1 hour, then revalidated
+async function ExerciseLibrary() {
+  const session = await auth();
+  const userId = session?.user?.id ? parseInt(session.user.id as string) : null;
 
-  const allExercises = await db.query.exercises.findMany();
+  const allExercises = await db.query.exercises.findMany({
+    where: userId
+      ? or(isNull(exercises.userId), eq(exercises.userId, userId))
+      : isNull(exercises.userId),
+  });
 
   // Group exercises by primary muscle group
   const grouped: Record<string, typeof allExercises> = {};
@@ -26,14 +39,7 @@ export default async function ExercisesPage() {
   const sortedGroups = Object.keys(grouped).sort();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Exercise Library</h1>
-        <p className="text-muted-foreground mt-1">
-          {allExercises.length} exercises across {sortedGroups.length} muscle groups
-        </p>
-      </div>
-
+    <>
       <ExerciseFilter exercises={allExercises} groups={sortedGroups} />
 
       {/* Server-rendered grouped list (visible when no client filter active) */}
@@ -53,6 +59,26 @@ export default async function ExercisesPage() {
           ))}
         </div>
       </noscript>
+    </>
+  );
+}
+
+export default function ExercisesPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Exercise Library</h1>
+          <p className="text-muted-foreground mt-1">
+            Browse exercises or add your own.
+          </p>
+        </div>
+        <CreateExerciseSheet />
+      </div>
+
+      <Suspense fallback={null}>
+        <ExerciseLibrary />
+      </Suspense>
     </div>
   );
 }
@@ -69,6 +95,7 @@ export function ExerciseCard({
     sfrRating: string | null;
     isStretchFocused: boolean | null;
     repRangeOptimal: unknown;
+    userId?: number | null;
   };
 }) {
   const mg = exercise.muscleGroups as { primary: string[]; secondary: string[] };
@@ -80,7 +107,15 @@ export function ExerciseCard({
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">{exercise.name}</CardTitle>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              {exercise.userId && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  <User className="h-3 w-3" />
+                  Custom
+                </Badge>
+              )}
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
         </CardHeader>
         <CardContent>

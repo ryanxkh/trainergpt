@@ -1,8 +1,9 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineBanner } from "@/components/offline-banner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { FlagValues } from "flags/react";
@@ -19,27 +20,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
-  title: "TrainerGPT — AI Hypertrophy Coach",
+  title: {
+    default: "TrainerGPT — AI Hypertrophy Coach",
+    template: "%s | TrainerGPT",
+  },
   description:
     "An AI-powered hypertrophy training coach that builds, adapts, and progresses your workout program using evidence-based principles.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TrainerGPT",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 async function ResolvedFlagValues() {
-  const [model, advancedCoaching, charts, timer] = await Promise.all([
-    flags.aiModel(),
-    flags.enableAdvancedCoaching(),
-    flags.showProgressCharts(),
-    flags.enableWorkoutTimer(),
-  ]);
+  const model = await flags.aiModel();
 
   return (
     <FlagValues
       values={{
         "ai-model": model,
-        "enable-advanced-coaching": advancedCoaching,
-        "show-progress-charts": charts,
-        "enable-workout-timer": timer,
       }}
     />
   );
@@ -56,6 +72,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <OfflineBanner />
           {children}
           <Toaster />
         </ThemeProvider>

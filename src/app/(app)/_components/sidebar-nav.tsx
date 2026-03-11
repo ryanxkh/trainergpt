@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, Dumbbell, CalendarDays, BookOpen, History } from "lucide-react";
+import { MessageSquare, Dumbbell, CalendarDays, BookOpen, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -11,19 +11,21 @@ const navItems = [
   { href: "/program", label: "Program", icon: CalendarDays },
   { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/history", label: "History", icon: History },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1 p-4">
+    <nav aria-label="Main navigation" className="flex flex-col gap-1 p-4">
       {navItems.map((item) => {
         const isActive = pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               isActive

@@ -1,16 +1,11 @@
-import { Suspense } from "react";
-import { enableWorkoutTimer } from "@/lib/flags";
+import type { Metadata } from "next";
 import WorkoutClient from "./_components/workout-client";
 
-async function WorkoutWithFlags() {
-  const timerEnabled = await enableWorkoutTimer();
-  return <WorkoutClient enableTimer={timerEnabled} />;
-}
+export const metadata: Metadata = {
+  title: "Today",
+  description: "Log your workout and track sets in real time.",
+};
 
 export default function WorkoutPage() {
-  return (
-    <Suspense fallback={null}>
-      <WorkoutWithFlags />
-    </Suspense>
-  );
+  return <WorkoutClient enableTimer />;
 }

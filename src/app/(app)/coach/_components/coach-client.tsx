@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { Dumbbell, User, Send, Check, ArrowRight } from "lucide-react";
+import { Dumbbell, User, Send, Check, ArrowRight, AlertCircle, RotateCcw, Square } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 
@@ -19,9 +19,10 @@ const QUICK_PROMPTS = [
 
 export default function CoachClient() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, error, clearError, regenerate, stop } = useChat();
 
   const isLoading = status === "streaming" || status === "submitted";
+  const isError = status === "error";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +64,7 @@ export default function CoachClient() {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-3 ${
+            className={`flex gap-3 animate-message-in ${
               message.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
@@ -149,6 +150,27 @@ export default function CoachClient() {
           )}
       </div>
 
+      {/* Error banner */}
+      {isError && error && (
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+          <p className="text-sm text-destructive flex-1">
+            Something went wrong. {error.message || "Please try again."}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              clearError();
+              regenerate();
+            }}
+          >
+            <RotateCcw className="mr-1.5 h-3 w-3" />
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Input */}
       <form onSubmit={handleSubmit} className="flex gap-2 border-t pt-4">
         <Input
@@ -156,15 +178,27 @@ export default function CoachClient() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your training..."
           disabled={isLoading}
+          aria-label="Message your coach"
           className="flex-1"
         />
-        <Button
-          type="submit"
-          disabled={isLoading || !input.trim()}
-          size="icon"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        {isLoading ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={() => stop()}
+          >
+            <Square className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={!input.trim()}
+            size="icon"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        )}
       </form>
     </div>
   );

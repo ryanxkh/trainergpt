@@ -8,6 +8,7 @@ import {
   useCallback,
 } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ import {
   Timer,
   Search,
   MessageSquare,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -48,6 +50,7 @@ import {
   logSet,
   deleteSet,
   completeWorkout,
+  deleteSession,
   getExerciseList,
   getActiveSession,
   getPreviousPerformance,
@@ -131,6 +134,50 @@ type PlannedSessionData = {
     exercisePreview: string[];
   }[];
 } | null;
+
+// ─── Stale Session Banner ────────────────────────────────────────────
+
+function StaleSessionBanner({
+  sessionDate,
+  onAbandon,
+}: {
+  sessionDate: Date;
+  onAbandon: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const sessionDay = new Date(sessionDate);
+  sessionDay.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (sessionDay >= today) return null;
+
+  const daysAgo = Math.round(
+    (today.getTime() - sessionDay.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 mb-4">
+      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+      <p className="text-sm text-amber-800 dark:text-amber-300 flex-1">
+        This session was started {daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`}. You can continue or discard it.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/40"
+        disabled={isPending}
+        onClick={() => {
+          startTransition(async () => {
+            onAbandon();
+          });
+        }}
+      >
+        {isPending ? "..." : "Discard"}
+      </Button>
+    </div>
+  );
+}
 
 // ─── No Workout State ───────────────────────────────────────────────
 
@@ -892,15 +939,52 @@ export default function WorkoutPage({
     setSession(null);
   }, []);
 
+  const handleDiscard = useCallback(async () => {
+    if (!session) return;
+    const result = await deleteSession(session.id);
+    if (result.success) {
+      toast.success("Session discarded");
+      setSession(null);
+      setRefreshKey((k) => k + 1);
+      setLoading(true);
+    } else {
+      toast.error(result.error);
+    }
+  }, [session]);
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-        <Card>
-          <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Loading...</p>
-          </CardContent>
-        </Card>
+      <div className="space-y-3">
+        {/* Header skeleton */}
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-40" />
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-7 w-48" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-5 w-12" />
+            </div>
+          </div>
+          <Skeleton className="h-1.5 w-full rounded-full" />
+        </div>
+        {/* Exercise card skeletons */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16 rounded-full" />
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <Skeleton className="h-7 w-12 rounded-full" />
+            </div>
+            <div className="space-y-2">
+              {[1, 2, 3].map((j) => (
+                <Skeleton key={j} className="h-10 w-full rounded" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -908,39 +992,45 @@ export default function WorkoutPage({
   // Active session with prescription → show prescribed workout UI
   if (session?.prescribedExercises && session.prescribedExercises.length > 0) {
     return (
-      <PrescribedWorkout
-        sessionId={session.id}
-        sessionName={session.sessionName}
-        sessionDate={session.date}
-        prescribedExercises={session.prescribedExercises}
-        initialSets={session.sets.map((s) => ({
-          id: s.id,
-          exerciseId: s.exerciseId,
-          setNumber: s.setNumber,
-          weight: s.weight,
-          reps: s.reps,
-          rir: s.rir,
-          setType: ((s as unknown as { setType?: string }).setType as import("./types").SetType) ?? "normal",
-        }))}
-        enableTimer={enableTimer}
-        onComplete={handleComplete}
-        mesocycleContext={mesocycleContext}
-        exerciseDetails={exerciseDetails}
-        previousPerformance={previousPerformance}
-        isDeload={session.isDeload ?? false}
-      />
+      <>
+        <StaleSessionBanner sessionDate={session.date} onAbandon={handleDiscard} />
+        <PrescribedWorkout
+          sessionId={session.id}
+          sessionName={session.sessionName}
+          sessionDate={session.date}
+          prescribedExercises={session.prescribedExercises}
+          initialSets={session.sets.map((s) => ({
+            id: s.id,
+            exerciseId: s.exerciseId,
+            setNumber: s.setNumber,
+            weight: s.weight,
+            reps: s.reps,
+            rir: s.rir,
+            setType: ((s as unknown as { setType?: string }).setType as import("./types").SetType) ?? "normal",
+          }))}
+          enableTimer={enableTimer}
+          onComplete={handleComplete}
+          mesocycleContext={mesocycleContext}
+          exerciseDetails={exerciseDetails}
+          previousPerformance={previousPerformance}
+          isDeload={session.isDeload ?? false}
+        />
+      </>
     );
   }
 
   // Active session without prescription → manual mode
   if (session) {
     return (
-      <ActiveWorkout
-        session={session}
-        exerciseList={exerciseList}
-        onComplete={handleComplete}
-        enableTimer={enableTimer}
-      />
+      <>
+        <StaleSessionBanner sessionDate={session.date} onAbandon={handleDiscard} />
+        <ActiveWorkout
+          session={session}
+          exerciseList={exerciseList}
+          onComplete={handleComplete}
+          enableTimer={enableTimer}
+        />
+      </>
     );
   }
 

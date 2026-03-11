@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronRight, Dumbbell, Zap, Search } from "lucide-react";
+import { ChevronRight, Dumbbell, Zap, Search, User } from "lucide-react";
 import Link from "next/link";
 
 type Exercise = {
@@ -16,6 +16,7 @@ type Exercise = {
   sfrRating: string | null;
   isStretchFocused: boolean | null;
   repRangeOptimal: unknown;
+  userId?: number | null;
 };
 
 export function ExerciseFilter({
@@ -65,6 +66,7 @@ export function ExerciseFilter({
             placeholder="Search exercises, muscle groups, equipment..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search exercises"
             className="pl-10"
           />
         </div>
@@ -72,6 +74,8 @@ export function ExerciseFilter({
           <Badge
             variant={activeGroup === null ? "default" : "outline"}
             className="cursor-pointer"
+            role="button"
+            aria-pressed={activeGroup === null}
             onClick={() => setActiveGroup(null)}
           >
             All ({exercises.length})
@@ -85,6 +89,8 @@ export function ExerciseFilter({
                 key={group}
                 variant={activeGroup === group ? "default" : "outline"}
                 className="cursor-pointer capitalize"
+                role="button"
+                aria-pressed={activeGroup === group}
                 onClick={() => setActiveGroup(activeGroup === group ? null : group)}
               >
                 {group.replace(/_/g, " ")} ({count})
@@ -115,7 +121,15 @@ export function ExerciseFilter({
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-base">{ex.name}</CardTitle>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {ex.userId && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <User className="h-3 w-3" />
+                                Custom
+                              </Badge>
+                            )}
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>

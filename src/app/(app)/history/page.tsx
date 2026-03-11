@@ -1,5 +1,11 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: "History",
+  description: "View your workout history and progression.",
+};
 import {
   workoutSessions,
   exerciseSets,
@@ -21,7 +27,6 @@ import {
 import { TrendingUp } from "lucide-react";
 import { VolumeChart } from "./_components/volume-chart";
 import { HistorySessionCard } from "./_components/session-card";
-import { showProgressCharts } from "@/lib/flags";
 
 async function getUserId() {
   const session = await auth();
@@ -331,13 +336,9 @@ function ListSkeleton() {
   );
 }
 
-// ─── Charts Section (flag-gated) ──────────────────────────────────
+// ─── Charts Section ───────────────────────────────────────────────
 
-async function ChartsSection() {
-  const chartsEnabled = await showProgressCharts();
-
-  if (!chartsEnabled) return null;
-
+function ChartsSection() {
   return (
     <>
       <Suspense fallback={<ChartSkeleton />}>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Check, Timer, CheckCircle2, StickyNote, Zap } from "lucide-react";
+import { Check, Timer, CheckCircle2, StickyNote, Zap, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { completeWorkout, getExerciseDetails, getPreviousPerformance } from "../actions";
 import { MuscleGroupBadge } from "./muscle-group-badge";
@@ -264,6 +264,7 @@ export default function PrescribedWorkout({
             loggedSets={logged}
             totalSets={totalSetsForExercise}
             isComplete={isComplete}
+            isDeload={isDeload}
             detail={detail}
             previousSets={previous}
             lastLoggedWeight={lastLoggedWeight}
@@ -319,7 +320,11 @@ export default function PrescribedWorkout({
           onClick={handleComplete}
           disabled={isPending || totalLogged === 0}
         >
-          <CheckCircle2 className="mr-2 h-5 w-5" />
+          {isPending ? (
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="mr-2 h-5 w-5" />
+          )}
           {isPending
             ? "Saving..."
             : `Complete Workout (${totalLogged} sets)`}
@@ -339,6 +344,7 @@ function ExerciseCard({
   loggedSets,
   totalSets,
   isComplete,
+  isDeload,
   detail,
   previousSets,
   lastLoggedWeight,
@@ -355,6 +361,7 @@ function ExerciseCard({
   loggedSets: LoggedSet[];
   totalSets: number;
   isComplete: boolean;
+  isDeload?: boolean;
   detail: ExerciseDetail | undefined;
   previousSets: PreviousSetData[] | undefined;
   lastLoggedWeight: number | undefined;
@@ -375,7 +382,8 @@ function ExerciseCard({
     <div
       className={cn(
         "rounded-lg border bg-card overflow-hidden transition-all duration-300",
-        isComplete && "opacity-60 saturate-50"
+        isComplete && "opacity-60 saturate-50",
+        isDeload && !isComplete && "border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/10"
       )}
     >
       {/* Card header */}

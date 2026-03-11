@@ -1,5 +1,11 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Program",
+  description: "View your mesocycle program and weekly sessions.",
+};
 import { getActiveProgramData } from "./actions";
 import { GenerateMesocycleForm } from "./_components/generate-form";
 import { Button } from "@/components/ui/button";

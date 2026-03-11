@@ -89,6 +89,7 @@ export const exercises = pgTable("exercises", {
   isStretchFocused: boolean("is_stretch_focused").default(false),
   repRangeOptimal: jsonb("rep_range_optimal").$type<[number, number]>().default([8, 12]),
   defaultRestSeconds: integer("default_rest_seconds").default(120),
+  userId: integer("user_id").references(() => users.id), // null = global, non-null = user-created
 });
 
 // ─── Mesocycles ─────────────────────────────────────────────────────

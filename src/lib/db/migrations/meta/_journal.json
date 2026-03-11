@@ -43,6 +43,13 @@
       "when": 1771895818409,
       "tag": "0005_faithful_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773237207909,
+      "tag": "0006_true_energizer",
+      "breakpoints": true
     }
   ]
 }

@@ -1,15 +1,18 @@
 import { Suspense } from "react";
 import { cacheLife } from "next/cache";
 import { db } from "@/lib/db";
-import { exercises } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { exercises, exerciseSets, workoutSessions } from "@/lib/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, Dumbbell, Zap, Timer, Target, Activity } from "lucide-react";
+import { ArrowLeft, Dumbbell, Zap, Timer, Target, Activity, User, TrendingUp } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { DeleteExerciseButton } from "./_components/delete-exercise-button";
+import { ExerciseHistoryChart, ExerciseHistoryTable } from "./_components/exercise-history";
 
 // Cached data-fetching helper — shared by generateMetadata and ExerciseContent
 async function getExercise(id: number) {
@@ -50,12 +53,17 @@ export async function generateMetadata({
 // Cached data-fetching component — static shell streams instantly,
 // exercise data fills in from cache (revalidated hourly)
 async function ExerciseContent({ exerciseId }: { exerciseId: number }) {
-  const exercise = await getExercise(exerciseId);
+  const [exercise, session] = await Promise.all([
+    getExercise(exerciseId),
+    auth(),
+  ]);
 
   if (!exercise) notFound();
 
   const mg = exercise.muscleGroups as { primary: string[]; secondary: string[] };
   const repRange = exercise.repRangeOptimal as [number, number];
+  const currentUserId = session?.user?.id ? parseInt(session.user.id as string) : null;
+  const isOwnCustom = exercise.userId !== null && exercise.userId === currentUserId;
 
   const sfrMap = {
     low: { text: "Low SFR", color: "text-red-500", desc: "High fatigue relative to stimulus" },
@@ -74,8 +82,19 @@ async function ExerciseContent({ exerciseId }: { exerciseId: number }) {
           <ArrowLeft className="h-3 w-3" />
           Back to Exercise Library
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight mt-2">{exercise.name}</h1>
+        <div className="flex items-center justify-between mt-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
+          {isOwnCustom && (
+            <DeleteExerciseButton exerciseId={exercise.id} exerciseName={exercise.name} />
+          )}
+        </div>
         <div className="flex flex-wrap gap-2 mt-3">
+          {exercise.userId !== null && (
+            <Badge variant="outline" className="gap-1">
+              <User className="h-3 w-3" />
+              Custom Exercise
+            </Badge>
+          )}
           {mg.primary.map((g) => (
             <Badge key={g} variant="default" className="capitalize">
               {g.replace(/_/g, " ")}
@@ -227,6 +246,116 @@ async function ExerciseContent({ exerciseId }: { exerciseId: number }) {
   );
 }
 
+// ─── User's Performance History ───────────────────────────────────
+
+async function PerformanceHistory({ exerciseId }: { exerciseId: number }) {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const userId = parseInt(session.user.id as string);
+
+  // Get all sets for this exercise from completed sessions, ordered by date
+  const sets = await db
+    .select({
+      weight: exerciseSets.weight,
+      reps: exerciseSets.reps,
+      rir: exerciseSets.rir,
+      date: workoutSessions.date,
+      sessionName: workoutSessions.sessionName,
+      sessionId: workoutSessions.id,
+    })
+    .from(exerciseSets)
+    .innerJoin(workoutSessions, eq(exerciseSets.sessionId, workoutSessions.id))
+    .where(
+      and(
+        eq(exerciseSets.exerciseId, exerciseId),
+        eq(workoutSessions.userId, userId),
+        eq(workoutSessions.status, "completed")
+      )
+    )
+    .orderBy(asc(workoutSessions.date), asc(exerciseSets.setNumber));
+
+  if (sets.length === 0) return null;
+
+  // Group by session
+  const sessionMap: Record<
+    number,
+    {
+      date: Date;
+      sessionName: string;
+      sets: { weight: number; reps: number; rir: number | null }[];
+    }
+  > = {};
+
+  for (const set of sets) {
+    if (!sessionMap[set.sessionId]) {
+      sessionMap[set.sessionId] = {
+        date: set.date,
+        sessionName: set.sessionName,
+        sets: [],
+      };
+    }
+    sessionMap[set.sessionId].sets.push({
+      weight: set.weight,
+      reps: set.reps,
+      rir: set.rir,
+    });
+  }
+
+  const historyData = Object.values(sessionMap)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((s) => {
+      const topSet = s.sets.reduce(
+        (best, curr) => (curr.weight > best.weight ? curr : best),
+        s.sets[0]
+      );
+      const avgWeight =
+        Math.round(
+          (s.sets.reduce((sum, v) => sum + v.weight, 0) / s.sets.length) * 10
+        ) / 10;
+      const avgReps =
+        Math.round(
+          (s.sets.reduce((sum, v) => sum + v.reps, 0) / s.sets.length) * 10
+        ) / 10;
+      const rirsWithValues = s.sets.filter((v) => v.rir !== null);
+      const avgRir =
+        rirsWithValues.length > 0
+          ? Math.round(
+              (rirsWithValues.reduce((sum, v) => sum + v.rir!, 0) /
+                rirsWithValues.length) *
+                10
+            ) / 10
+          : null;
+
+      return {
+        date: s.date.toISOString(),
+        sessionName: s.sessionName,
+        topSetWeight: topSet.weight,
+        topSetReps: topSet.reps,
+        avgWeight,
+        avgReps,
+        avgRir,
+        sets: s.sets.length,
+      };
+    });
+
+  if (historyData.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <TrendingUp className="h-4 w-4" />
+          Your Performance History
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ExerciseHistoryChart data={historyData} />
+        <ExerciseHistoryTable data={historyData} />
+      </CardContent>
+    </Card>
+  );
+}
+
 function ExerciseDetailSkeleton() {
   return (
     <>
@@ -260,6 +389,17 @@ export default async function ExerciseDetailPage({
     <div className="space-y-6 max-w-3xl">
       <Suspense fallback={<ExerciseDetailSkeleton />}>
         <ExerciseContent exerciseId={id} />
+      </Suspense>
+      <Suspense
+        fallback={
+          <Card>
+            <CardContent className="py-6">
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+        }
+      >
+        <PerformanceHistory exerciseId={id} />
       </Suspense>
     </div>
   );

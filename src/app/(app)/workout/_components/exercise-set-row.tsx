@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { logSet } from "../actions";
 import type { PrescribedExercise, LoggedSet, PreviousSetData, SetType } from "./types";
@@ -150,7 +150,7 @@ export function ActiveSetRow({
           onClick={handleLog}
           disabled={isPending}
         >
-          {isPending ? "..." : "Log"}
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
         </Button>
       </div>
 

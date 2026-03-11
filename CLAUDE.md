@@ -146,3 +146,25 @@ ANTHROPIC_API_KEY, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET
 Optional: `EDGE_CONFIG` (for feature flags via Edge Config)
 
 > **Auth note**: NextAuth v5 uses `AUTH_SECRET` (not `NEXTAUTH_SECRET`). No `NEXTAUTH_URL` needed in production — Vercel auto-detects via `VERCEL_URL`. GitHub OAuth callback URL must match production domain (`https://trainergpt.xyz/api/auth/callback/github`).
+
+## Project Tracking — Notion
+
+**All work must be tracked in the [TrainerGPT — SLC Tracker](https://www.notion.so/2e97a56144dd43b690f145411aa0f1aa) Notion database.**
+
+After completing any of the following, add or update the corresponding task in Notion via the Notion MCP (`mcp__plugin_Notion_notion`):
+- New feature built
+- Bug fixed
+- UI change (including mobile UX fixes, layout changes, design polish)
+- Tech debt addressed
+- New bug discovered (add as `Backlog` with type `Bug`)
+
+Use data source ID `60257600-8325-42d2-8500-5c9c7ee71bbb` when creating rows. Update task Status to `Done` when work is complete. If work surfaces a new task not already on the board, add it.
+
+### Field Notes
+
+**[TrainerGPT — Field Notes](https://www.notion.so/320d631d7a4d814c82ffd0f0cdff2b94)** is a freeform Notion page where Ryan dumps screenshots, bugs, ideas, and observations from the gym via his phone.
+
+**At the start of every session**, fetch this page via the Notion MCP (`mcp__plugin_Notion_notion__notion-fetch`) and check for new content. If there are new notes or screenshots:
+1. Discuss them with Ryan to understand context and intent
+2. Triage into actionable work — create tasks on the SLC Tracker board, fix bugs directly, or flag for discussion
+3. After processing, move the handled notes into a "Processed" toggle or clear them so the page stays clean for the next dump

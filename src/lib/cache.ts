@@ -8,7 +8,7 @@ import {
   userVolumeLandmarks,
   mesocycles,
 } from "./db/schema";
-import { eq, and, gte, sql, desc, isNotNull, lte } from "drizzle-orm";
+import { eq, and, gte, sql, desc, isNotNull, isNull, lte, or } from "drizzle-orm";
 
 // TTL constants (seconds)
 const TTL = {
@@ -180,26 +180,39 @@ export async function getCachedProfile(userId: number): Promise<ProfileData | nu
 
 // ─── Exercise List Cache ───────────────────────────────────────────
 
-export async function getCachedExercises() {
+export async function getCachedExercises(userId?: number) {
+  // Global exercises (shared across all users)
+  const cacheKey = userId
+    ? `${exerciseListKey()}:${userId}`
+    : exerciseListKey();
+
   const cached = await redis.get<Array<{
     id: number;
     name: string;
     muscleGroups: { primary: string[]; secondary: string[] };
     movementPattern: string;
     equipment: string;
-  }>>(exerciseListKey());
+    isCustom: boolean;
+  }>>(cacheKey);
   if (cached) return cached;
 
-  const allExercises = await db.query.exercises.findMany();
+  const conditions = userId
+    ? or(isNull(exercises.userId), eq(exercises.userId, userId))
+    : isNull(exercises.userId);
+
+  const allExercises = await db.query.exercises.findMany({
+    where: conditions,
+  });
   const simplified = allExercises.map((e) => ({
     id: e.id,
     name: e.name,
     muscleGroups: e.muscleGroups as { primary: string[]; secondary: string[] },
     movementPattern: e.movementPattern,
     equipment: e.equipment,
+    isCustom: e.userId !== null,
   }));
 
-  await redis.set(exerciseListKey(), simplified, { ex: TTL.exercises });
+  await redis.set(cacheKey, simplified, { ex: TTL.exercises });
   return simplified;
 }
 

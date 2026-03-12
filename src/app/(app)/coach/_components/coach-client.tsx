@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -172,14 +172,21 @@ export default function CoachClient() {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex gap-2 border-t pt-4">
-        <Input
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t pt-4">
+        <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
           placeholder="Ask about your training..."
           disabled={isLoading}
           aria-label="Message your coach"
-          className="flex-1"
+          rows={1}
+          className="flex-1 min-h-0 max-h-32 py-2"
         />
         {isLoading ? (
           <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import {
   Sheet,
   SheetTrigger,
@@ -18,8 +18,23 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getAlternativeExercises, replaceExercise } from "../actions";
+import { createCustomExercise } from "../../exercises/actions";
 import { MuscleGroupBadge } from "./muscle-group-badge";
+
+const MUSCLE_GROUPS = [
+  "chest", "back", "quads", "hamstrings", "glutes",
+  "front_delts", "side_delts", "rear_delts",
+  "biceps", "triceps", "calves", "abs", "traps", "forearms",
+];
+
+const EQUIPMENT_OPTIONS = [
+  "barbell", "dumbbell", "cable", "machine", "bodyweight",
+  "kettlebell", "band", "smith machine", "other",
+];
 
 type Alternative = {
   id: number;
@@ -50,16 +65,51 @@ export function ExerciseMenu({
   onReplace: (newId: number, newName: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"menu" | "replace">("menu");
+  const [view, setView] = useState<"menu" | "replace" | "create">("menu");
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [loadingAlternatives, setLoadingAlternatives] = useState(false);
   const [replacingId, setReplacingId] = useState<number | null>(null);
+
+  // Create form state
+  const [newName, setNewName] = useState("");
+  const [newPrimary, setNewPrimary] = useState<string[]>([]);
+  const [newEquipment, setNewEquipment] = useState("dumbbell");
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
       setView("menu");
+      setNewName("");
+      setNewPrimary([]);
+      setNewEquipment("dumbbell");
     }
+  };
+
+  const handleCreate = async () => {
+    if (!newName.trim() || newPrimary.length === 0) return;
+    setIsCreating(true);
+    const createResult = await createCustomExercise({
+      name: newName.trim(),
+      primaryMuscles: newPrimary,
+      secondaryMuscles: [],
+      movementPattern: "isolation",
+      equipment: newEquipment,
+    });
+    if (!createResult.success) {
+      toast.error(createResult.error);
+      setIsCreating(false);
+      return;
+    }
+    const replaceResult = await replaceExercise(sessionId, exerciseId, createResult.exerciseId);
+    if (replaceResult.success) {
+      toast.success(`Created & swapped to ${newName.trim()}`);
+      onReplace(createResult.exerciseId, replaceResult.data.exerciseName);
+      setOpen(false);
+    } else {
+      toast.error(replaceResult.error);
+    }
+    setIsCreating(false);
   };
 
   const handleShowReplace = async () => {
@@ -135,7 +185,7 @@ export function ExerciseMenu({
               />
             </div>
           </>
-        ) : (
+        ) : view === "replace" ? (
           <>
             <SheetHeader>
               <SheetTitle className="text-base font-semibold flex items-center gap-2">
@@ -160,7 +210,8 @@ export function ExerciseMenu({
                   No alternative exercises found for this muscle group.
                 </p>
               ) : (
-                alternatives.map((alt) => (
+                <>
+                {alternatives.map((alt) => (
                   <button
                     key={alt.id}
                     type="button"
@@ -185,8 +236,93 @@ export function ExerciseMenu({
                       </div>
                     </div>
                   </button>
-                ))
+                ))}
+                <div className="border-t mt-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setView("create")}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent active:bg-accent/80 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Custom Exercise
+                  </button>
+                </div>
+              </>
               )}
+            </div>
+          </>
+        ) : (
+          /* ── Create Custom Exercise View ── */
+          <>
+            <SheetHeader>
+              <SheetTitle className="text-base font-semibold flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setView("replace")}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                Create & Replace
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-4 space-y-4 max-h-[50vh] overflow-auto">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Exercise name"
+                autoFocus
+              />
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Primary Muscles</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {MUSCLE_GROUPS.map((mg) => (
+                    <Badge
+                      key={mg}
+                      variant={newPrimary.includes(mg) ? "default" : "outline"}
+                      className="cursor-pointer capitalize text-xs"
+                      onClick={() =>
+                        setNewPrimary((prev) =>
+                          prev.includes(mg)
+                            ? prev.filter((m) => m !== mg)
+                            : [...prev, mg]
+                        )
+                      }
+                    >
+                      {mg.replace(/_/g, " ")}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Equipment</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {EQUIPMENT_OPTIONS.map((eq) => (
+                    <Badge
+                      key={eq}
+                      variant={newEquipment === eq ? "default" : "outline"}
+                      className="cursor-pointer capitalize text-xs"
+                      onClick={() => setNewEquipment(eq)}
+                    >
+                      {eq}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <Button
+                onClick={handleCreate}
+                disabled={isCreating || !newName.trim() || newPrimary.length === 0}
+                className="w-full"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create & Replace"
+                )}
+              </Button>
             </div>
           </>
         )}

@@ -252,9 +252,11 @@ export default function PrescribedWorkout({
           logged.length >= totalSetsForExercise ||
           skippedExercises.has(exercise.exerciseId);
 
-        // Compute last logged weight for this exercise in the current session
+        // Compute last logged weight/RIR for this exercise in the current session
         const lastLoggedWeight =
           logged.length > 0 ? logged[logged.length - 1].weight : undefined;
+        const lastLoggedRir =
+          logged.length > 0 ? logged[logged.length - 1].rir : undefined;
 
         return (
           <ExerciseCard
@@ -268,6 +270,7 @@ export default function PrescribedWorkout({
             detail={detail}
             previousSets={previous}
             lastLoggedWeight={lastLoggedWeight}
+            lastLoggedRir={lastLoggedRir}
             excludeExerciseIds={exercises.map((e) => e.exerciseId)}
             notes={exerciseNotes[exercise.exerciseId] ?? ""}
             onNotesChange={(val) =>
@@ -281,6 +284,13 @@ export default function PrescribedWorkout({
               if (enableTimer) {
                 setRestTimer(exercise.restSeconds);
               }
+            }}
+            onSetUpdated={(setId, updated) => {
+              setLoggedSets((prev) =>
+                prev.map((s) =>
+                  s.id === setId ? { ...s, ...updated } : s
+                )
+              );
             }}
             onAddSet={() =>
               setExtraSets((prev) => ({
@@ -348,10 +358,12 @@ function ExerciseCard({
   detail,
   previousSets,
   lastLoggedWeight,
+  lastLoggedRir,
   excludeExerciseIds,
   notes,
   onNotesChange,
   onSetLogged,
+  onSetUpdated,
   onAddSet,
   onSkipRemaining,
   onReplace,
@@ -365,10 +377,12 @@ function ExerciseCard({
   detail: ExerciseDetail | undefined;
   previousSets: PreviousSetData[] | undefined;
   lastLoggedWeight: number | undefined;
+  lastLoggedRir: number | null | undefined;
   excludeExerciseIds: number[];
   notes: string;
   onNotesChange: (val: string) => void;
   onSetLogged: (set: LoggedSet) => void;
+  onSetUpdated: (setId: number, updated: { weight: number; reps: number; rir: number | null }) => void;
   onAddSet: () => void;
   onSkipRemaining: () => void;
   onReplace: (newId: number, newName: string) => void;
@@ -480,11 +494,13 @@ function ExerciseCard({
               return (
                 <CompletedSetRow
                   key={setNumber}
+                  setId={logged.id}
                   setNumber={setNumber}
                   weight={logged.weight}
                   reps={logged.reps}
                   rir={logged.rir}
                   setType={logged.setType}
+                  onSetUpdated={(updated) => onSetUpdated(logged.id, updated)}
                 />
               );
             }
@@ -500,6 +516,7 @@ function ExerciseCard({
                   target={exercise}
                   previousSet={prevSet}
                   lastLoggedWeight={lastLoggedWeight}
+                  lastLoggedRir={lastLoggedRir}
                   defaultSetType={defaultSetType}
                   onSetLogged={onSetLogged}
                 />

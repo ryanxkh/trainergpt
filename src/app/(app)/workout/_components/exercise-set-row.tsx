@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { logSet } from "../actions";
+import { logSet, updateSet } from "../actions";
 import type { PrescribedExercise, LoggedSet, PreviousSetData, SetType } from "./types";
 
 /* ================================================================
@@ -14,20 +14,109 @@ import type { PrescribedExercise, LoggedSet, PreviousSetData, SetType } from "./
    ================================================================ */
 
 export function CompletedSetRow({
+  setId,
   setNumber,
   weight,
   reps,
   rir,
   setType,
+  onSetUpdated,
 }: {
+  setId: number;
   setNumber: number;
   weight: number;
   reps: number;
   rir: number | null;
   setType: SetType;
+  onSetUpdated?: (updated: { weight: number; reps: number; rir: number | null }) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editWeight, setEditWeight] = useState(weight.toString());
+  const [editReps, setEditReps] = useState(reps.toString());
+  const [editRir, setEditRir] = useState(rir?.toString() ?? "");
+  const [isPending, startTransition] = useTransition();
+
+  const handleSave = () => {
+    if (!editWeight || !editReps) {
+      toast.error("Enter weight and reps");
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateSet(setId, {
+        weight: parseFloat(editWeight),
+        reps: parseInt(editReps),
+        rir: editRir ? parseInt(editRir) : undefined,
+      });
+      if (result.success) {
+        onSetUpdated?.({
+          weight: parseFloat(editWeight),
+          reps: parseInt(editReps),
+          rir: editRir ? parseInt(editRir) : null,
+        });
+        setEditing(false);
+        toast.success("Set updated");
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    setEditWeight(weight.toString());
+    setEditReps(reps.toString());
+    setEditRir(rir?.toString() ?? "");
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="py-2.5 border-l-2 border-amber-500 pl-3 -ml-0.5 space-y-2 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] rounded-r-md">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums">
+            {setNumber}
+          </span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={editWeight}
+            onChange={(e) => setEditWeight(e.target.value)}
+            className="h-9 w-20 text-center font-medium tabular-nums text-sm"
+          />
+          <span className="text-muted-foreground text-xs">&times;</span>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={editReps}
+            onChange={(e) => setEditReps(e.target.value)}
+            className="h-9 w-16 text-center font-medium tabular-nums text-sm"
+          />
+          <Input
+            type="number"
+            inputMode="numeric"
+            placeholder="RIR"
+            value={editRir}
+            onChange={(e) => setEditRir(e.target.value)}
+            className="h-9 w-14 text-center font-medium tabular-nums text-sm"
+          />
+          <div className="flex gap-1 ml-auto">
+            <Button size="sm" variant="ghost" onClick={handleCancel} disabled={isPending} className="h-9 px-2 text-xs">
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSave} disabled={isPending} className="h-9 px-3 text-xs">
+              {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-3 py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md">
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="flex items-center gap-3 py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md w-full text-left active:bg-green-500/[0.08] transition-colors"
+    >
       <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums">
         {setNumber}
       </span>
@@ -51,7 +140,7 @@ export function CompletedSetRow({
         </span>
       )}
       <Check className="h-3.5 w-3.5 text-green-500 ml-auto shrink-0" />
-    </div>
+    </button>
   );
 }
 
@@ -67,6 +156,7 @@ export function ActiveSetRow({
   target,
   previousSet,
   lastLoggedWeight,
+  lastLoggedRir,
   defaultSetType,
   onSetLogged,
 }: {
@@ -77,6 +167,7 @@ export function ActiveSetRow({
   target: PrescribedExercise;
   previousSet: PreviousSetData | undefined;
   lastLoggedWeight: number | undefined;
+  lastLoggedRir: number | null | undefined;
   defaultSetType: SetType;
   onSetLogged: (set: LoggedSet) => void;
 }) {
@@ -85,7 +176,8 @@ export function ActiveSetRow({
     prefillWeight ? prefillWeight.toString() : ""
   );
   const [reps, setReps] = useState("");
-  const [rir, setRir] = useState(target.rirTarget.toString());
+  const prefillRir = lastLoggedRir ?? previousSet?.rir ?? target.rirTarget;
+  const [rir, setRir] = useState(prefillRir.toString());
   const [setType, setSetType] = useState<SetType>(defaultSetType);
   const [isPending, startTransition] = useTransition();
 

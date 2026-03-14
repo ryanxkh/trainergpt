@@ -56,7 +56,7 @@ export function ExerciseInfoSheet({
         <div className="mt-4 space-y-4">
           {/* Muscle groups */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
               Primary Muscles
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -66,7 +66,7 @@ export function ExerciseInfoSheet({
             </div>
             {detail.muscleGroups.secondary.length > 0 && (
               <>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mt-3">
                   Secondary Muscles
                 </p>
                 <div className="flex flex-wrap gap-1.5">

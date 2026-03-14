@@ -21,6 +21,7 @@
     "@auth/drizzle-adapter": "^1.11.1",
     "@flags-sdk/edge-config": "^0.1.2",
     "@neondatabase/serverless": "^1.0.2",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
     "@vercel/analytics": "^1.6.1",

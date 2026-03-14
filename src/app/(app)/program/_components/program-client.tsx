@@ -241,7 +241,7 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
             This mesocycle was created without a structured session plan.
             Complete it and generate a new program to see the full grid with exercises, sets, and RIR targets.
           </p>
-          <div className="flex justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <Button
               variant="outline"
               size="sm"

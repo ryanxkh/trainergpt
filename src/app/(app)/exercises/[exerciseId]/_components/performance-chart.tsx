@@ -62,10 +62,10 @@ export function PerformanceChart({ data }: { data: ChartData[] }) {
           }}
           labelStyle={{ color: tooltipText, fontWeight: 600, marginBottom: 4 }}
           itemStyle={{ color: tooltipText }}
-          formatter={(value: number, name: string) => [
-            `${value} lbs`,
+          formatter={((value: number | undefined, name: string | undefined) => [
+            `${value ?? 0} lbs`,
             name === "topWeight" ? "Top Set" : "Average",
-          ]}
+          ]) as never}
         />
         <Legend
           wrapperStyle={{ fontSize: 11, paddingTop: 8 }}

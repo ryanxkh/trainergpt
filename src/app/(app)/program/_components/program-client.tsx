@@ -316,6 +316,35 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         </div>
       </div>
 
+      {/* Week Pills - Mobile-friendly week selector */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
+        {weeks.map((week) => {
+          const isSelected = week.weekNumber === selectedWeek;
+          return (
+            <button
+              key={week.weekNumber}
+              onClick={() => setSelectedWeek(week.weekNumber)}
+              className={`
+                shrink-0 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold transition-all active:scale-95
+                ${isSelected
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : week.isCompleted
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                    : week.isDeload
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                }
+              `}
+            >
+              <div className="tabular-nums">{week.isDeload ? "DL" : `W${week.weekNumber}`}</div>
+              {week.isCompleted && !isSelected && (
+                <CheckCircle2 className="h-3 w-3 mx-auto mt-0.5" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Grid legend */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">

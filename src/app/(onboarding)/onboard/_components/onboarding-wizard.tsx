@@ -37,14 +37,14 @@ function OptionCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-lg border-2 p-4 text-left transition-colors ${
+      className={`w-full min-h-[72px] rounded-xl border-2 p-4 text-left transition-all active:scale-[0.98] ${
         selected
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-muted-foreground/50"
+          ? "border-primary bg-primary/5 shadow-sm"
+          : "border-border hover:border-muted-foreground/50 hover:bg-muted/30"
       }`}
     >
       <p className="font-semibold tracking-tight">{title}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <p className="mt-1 text-sm text-muted-foreground leading-snug">{description}</p>
     </button>
   );
 }
@@ -99,7 +99,7 @@ export function OnboardingWizard() {
         {STEPS.map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
+            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
               i <= step ? "bg-primary" : "bg-muted"
             }`}
           />
@@ -147,17 +147,17 @@ export function OnboardingWizard() {
             </p>
             <div className="flex gap-2 flex-wrap">
               {[2, 3, 4, 5, 6].map((d) => (
-                <Button
+                <button
                   key={d}
-                  variant={
-                    data.availableTrainingDays === d ? "default" : "outline"
-                  }
-                  size="lg"
                   onClick={() => setDays(d)}
-                  className="flex-1 min-w-[3.5rem]"
+                  className={`flex-1 min-w-[56px] min-h-[56px] rounded-xl text-lg font-semibold transition-all active:scale-95 ${
+                    data.availableTrainingDays === d
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
                 >
                   {d}
-                </Button>
+                </button>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -246,19 +246,19 @@ export function OnboardingWizard() {
       {/* Navigation */}
       <div className="flex gap-3">
         {step > 0 && (
-          <Button variant="outline" onClick={back} disabled={isPending}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="outline" onClick={back} disabled={isPending} className="h-11">
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back
           </Button>
         )}
         <Button
-          className="flex-1"
+          className="flex-1 h-11 text-base font-semibold"
           onClick={isLast ? handleFinish : next}
           disabled={isPending}
         >
           {isPending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Setting up...
             </>
           ) : isLast ? (
@@ -266,7 +266,7 @@ export function OnboardingWizard() {
           ) : (
             <>
               Next
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 ml-1.5" />
             </>
           )}
         </Button>

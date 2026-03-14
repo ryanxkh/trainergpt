@@ -151,9 +151,9 @@ export function ExerciseMenu({
                 {exerciseName}
               </SheetTitle>
             </SheetHeader>
-            <div className="mt-4 space-y-0.5">
+            <div className="mt-4 space-y-1">
               <MenuAction
-                icon={<Plus className="h-5 w-5" />}
+                icon={<Plus className="h-5 w-5 stroke-[1.5]" />}
                 label="Add Set"
                 onClick={() => {
                   onAddSet();
@@ -162,7 +162,7 @@ export function ExerciseMenu({
               />
               {!isComplete && (
                 <MenuAction
-                  icon={<SkipForward className="h-5 w-5" />}
+                  icon={<SkipForward className="h-5 w-5 stroke-[1.5]" />}
                   label="Skip Remaining"
                   onClick={() => {
                     onSkipRemaining();
@@ -171,7 +171,7 @@ export function ExerciseMenu({
                 />
               )}
               <MenuAction
-                icon={<StickyNote className="h-5 w-5" />}
+                icon={<StickyNote className="h-5 w-5 stroke-[1.5]" />}
                 label="Notes"
                 onClick={() => {
                   onToggleNotes();
@@ -179,7 +179,7 @@ export function ExerciseMenu({
                 }}
               />
               <MenuAction
-                icon={<RefreshCw className="h-5 w-5" />}
+                icon={<RefreshCw className="h-5 w-5 stroke-[1.5]" />}
                 label="Replace Exercise"
                 onClick={handleShowReplace}
               />
@@ -192,7 +192,7 @@ export function ExerciseMenu({
                 <button
                   type="button"
                   onClick={() => setView("menu")}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                  className="h-9 w-9 -ml-1 inline-flex items-center justify-center rounded-md hover:bg-accent active:scale-95 transition-all"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
@@ -217,16 +217,18 @@ export function ExerciseMenu({
                     type="button"
                     disabled={replacingId !== null}
                     onClick={() => handleReplace(alt.id)}
-                    className="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left hover:bg-accent active:bg-accent/80 transition-colors disabled:opacity-50"
+                    className="flex w-full items-start gap-3 rounded-lg px-3 py-3 min-h-11 text-left hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all disabled:opacity-50"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight">
-                        {alt.name}
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold leading-tight">
+                          {alt.name}
+                        </p>
                         {replacingId === alt.id && (
-                          <Loader2 className="inline h-3.5 w-3.5 animate-spin ml-2" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                         )}
-                      </p>
-                      <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mt-0.5 font-medium">
+                      </div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mt-0.5 font-medium">
                         {alt.equipment}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1.5">
@@ -237,13 +239,13 @@ export function ExerciseMenu({
                     </div>
                   </button>
                 ))}
-                <div className="border-t mt-2 pt-2">
+                <div className="border-t border-dashed mt-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setView("create")}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent active:bg-accent/80 transition-colors"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 min-h-11 text-sm font-medium text-muted-foreground hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 stroke-[1.5]" />
                     Create Custom Exercise
                   </button>
                 </div>
@@ -259,7 +261,7 @@ export function ExerciseMenu({
                 <button
                   type="button"
                   onClick={() => setView("replace")}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                  className="h-9 w-9 -ml-1 inline-flex items-center justify-center rounded-md hover:bg-accent active:scale-95 transition-all"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
@@ -273,14 +275,13 @@ export function ExerciseMenu({
                 placeholder="Exercise name"
                 autoFocus
               />
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground">Primary Muscles</p>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Muscles</p>
                 <div className="flex flex-wrap gap-1.5">
                   {MUSCLE_GROUPS.map((mg) => (
-                    <Badge
+                    <button
                       key={mg}
-                      variant={newPrimary.includes(mg) ? "default" : "outline"}
-                      className="cursor-pointer capitalize text-xs"
+                      type="button"
                       onClick={() =>
                         setNewPrimary((prev) =>
                           prev.includes(mg)
@@ -288,35 +289,44 @@ export function ExerciseMenu({
                             : [...prev, mg]
                         )
                       }
+                      className={`min-h-7 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-all active:scale-95 ${
+                        newPrimary.includes(mg)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
+                      }`}
                     >
                       {mg.replace(/_/g, " ")}
-                    </Badge>
+                    </button>
                   ))}
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground">Equipment</p>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Equipment</p>
                 <div className="flex flex-wrap gap-1.5">
                   {EQUIPMENT_OPTIONS.map((eq) => (
-                    <Badge
+                    <button
                       key={eq}
-                      variant={newEquipment === eq ? "default" : "outline"}
-                      className="cursor-pointer capitalize text-xs"
+                      type="button"
                       onClick={() => setNewEquipment(eq)}
+                      className={`min-h-7 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-all active:scale-95 ${
+                        newEquipment === eq
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-accent"
+                      }`}
                     >
                       {eq}
-                    </Badge>
+                    </button>
                   ))}
                 </div>
               </div>
               <Button
                 onClick={handleCreate}
                 disabled={isCreating || !newName.trim() || newPrimary.length === 0}
-                className="w-full"
+                className="w-full h-11 text-base font-semibold"
               >
                 {isCreating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Creating...
                   </>
                 ) : (
@@ -343,10 +353,10 @@ function MenuAction({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-4 rounded-lg px-3 py-3.5 text-sm font-medium hover:bg-accent active:bg-accent/80 transition-colors"
+      className="flex w-full items-center gap-4 rounded-lg px-4 min-h-[52px] text-sm font-medium hover:bg-accent active:bg-accent/80 active:scale-[0.98] transition-all"
       onClick={onClick}
     >
-      <span className="text-muted-foreground">{icon}</span>
+      <span className="text-muted-foreground shrink-0">{icon}</span>
       {label}
     </button>
   );

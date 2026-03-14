@@ -18,8 +18,12 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden" style={{ touchAction: "manipulation" }}>
-      <div className="flex h-16 items-stretch" role="tablist">
+    <nav
+      aria-label="Main navigation"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm md:hidden"
+      style={{ touchAction: "manipulation" }}
+    >
+      <div className="flex h-16 items-stretch pb-[env(safe-area-inset-bottom)]" role="tablist">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
           return (
@@ -30,19 +34,23 @@ export function MobileNav() {
               aria-selected={isActive}
               aria-label={tab.label}
               className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
+                "relative flex min-h-11 flex-1 flex-col items-center justify-center gap-1 px-2 py-2 text-[10px] font-medium transition-colors active:text-primary",
                 isActive
                   ? "text-primary"
-                  : "text-muted-foreground active:text-primary"
+                  : "text-muted-foreground"
               )}
             >
               {isActive && (
-                <span className="absolute top-0 h-0.5 w-8 rounded-b-full bg-primary" />
+                <span className="absolute top-0 h-1 w-8 rounded-b bg-primary" />
               )}
               <tab.icon
-                className={cn("h-5 w-5", isActive && "stroke-[2.5]")}
+                className={cn(
+                  "h-5 w-5",
+                  isActive ? "stroke-[2.5]" : "stroke-2"
+                )}
+                aria-hidden="true"
               />
-              {tab.label}
+              <span className="truncate">{tab.label}</span>
             </Link>
           );
         })}

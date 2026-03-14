@@ -1,406 +1,416 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { cacheLife } from "next/cache";
+import Link from "next/link";
+import { eq, and, desc } from "drizzle-orm";
+import { ArrowLeft, Sparkles, User } from "lucide-react";
 import { db } from "@/lib/db";
 import { exercises, exerciseSets, workoutSessions } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
-import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { ArrowLeft, Dumbbell, Zap, Timer, Target, Activity, User, TrendingUp } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MuscleGroupBadge } from "@/app/(app)/workout/_components/muscle-group-badge";
+import { PerformanceChart } from "./_components/performance-chart";
 import { DeleteExerciseButton } from "./_components/delete-exercise-button";
-import { ExerciseHistoryChart, ExerciseHistoryTable } from "./_components/exercise-history";
 
-// Cached data-fetching helper — shared by generateMetadata and ExerciseContent
+type Props = {
+  params: Promise<{ exerciseId: string }>;
+};
+
 async function getExercise(id: number) {
   "use cache";
   cacheLife("hours");
   return db.query.exercises.findFirst({ where: eq(exercises.id, id) });
 }
 
-// Pre-render all exercise pages at build time
-export async function generateStaticParams() {
-  const allExercises = await db.query.exercises.findMany();
-  return allExercises.map((ex) => ({
-    exerciseId: String(ex.id),
-  }));
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ exerciseId: string }>;
-}) {
-  const { exerciseId } = await params;
-  const id = parseInt(exerciseId);
-  if (isNaN(id)) return { title: "Exercise Not Found" };
-
-  const exercise = await getExercise(id);
-
-  if (!exercise) return { title: "Exercise Not Found" };
-
-  const mg = exercise.muscleGroups as { primary: string[] };
+export async function generateMetadata({ params }: Props) {
+  const { exerciseId: id } = await params;
+  const exercise = await getExercise(parseInt(id));
 
   return {
-    title: `${exercise.name} | TrainerGPT`,
-    description: `${exercise.name} — targets ${mg.primary.join(", ")}. ${exercise.movementPattern.replace(/_/g, " ")} movement using ${exercise.equipment}.`,
+    title: exercise ? `${exercise.name} | TrainerGPT` : "Exercise | TrainerGPT",
+    description: exercise
+      ? `Details and performance history for ${exercise.name}`
+      : "Exercise details",
   };
 }
 
-// Cached data-fetching component — static shell streams instantly,
-// exercise data fills in from cache (revalidated hourly)
-async function ExerciseContent({ exerciseId }: { exerciseId: number }) {
-  const [exercise, session] = await Promise.all([
-    getExercise(exerciseId),
-    auth(),
-  ]);
-
-  if (!exercise) notFound();
-
-  const mg = exercise.muscleGroups as { primary: string[]; secondary: string[] };
-  const repRange = exercise.repRangeOptimal as [number, number];
-  const currentUserId = session?.user?.id ? parseInt(session.user.id as string) : null;
-  const isOwnCustom = exercise.userId !== null && exercise.userId === currentUserId;
-
-  const sfrMap = {
-    low: { text: "Low SFR", color: "text-red-500", desc: "High fatigue relative to stimulus" },
-    medium: { text: "Medium SFR", color: "text-yellow-500", desc: "Moderate fatigue-to-stimulus ratio" },
-    high: { text: "High SFR", color: "text-green-500", desc: "Great stimulus with minimal fatigue" },
-  } as const;
-  const sfrLabel = sfrMap[(exercise.sfrRating as keyof typeof sfrMap) || "medium"] ?? sfrMap.medium;
-
-  return (
-    <>
-      <div>
-        <Link
-          href="/exercises"
-          className="text-sm text-muted-foreground hover:underline inline-flex items-center gap-1"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          Back to Exercise Library
-        </Link>
-        <div className="flex items-center justify-between mt-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
-          {isOwnCustom && (
-            <DeleteExerciseButton exerciseId={exercise.id} exerciseName={exercise.name} />
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2 mt-3">
-          {exercise.userId !== null && (
-            <Badge variant="outline" className="gap-1">
-              <User className="h-3 w-3" />
-              Custom Exercise
-            </Badge>
-          )}
-          {mg.primary.map((g) => (
-            <Badge key={g} variant="default" className="capitalize">
-              {g.replace(/_/g, " ")}
-            </Badge>
-          ))}
-          {mg.secondary.map((g) => (
-            <Badge key={g} variant="secondary" className="capitalize">
-              {g.replace(/_/g, " ")}
-            </Badge>
-          ))}
-          {exercise.isStretchFocused && (
-            <Badge variant="outline" className="gap-1">
-              <Dumbbell className="h-3 w-3" />
-              Stretch-Focused
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Movement Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Movement Pattern</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {exercise.movementPattern.replace(/_/g, " ")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Dumbbell className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Equipment</p>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {exercise.equipment}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Training Parameters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Target className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Optimal Rep Range</p>
-                <p className="text-sm text-muted-foreground">
-                  {repRange[0]} – {repRange[1]} reps
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Timer className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Default Rest</p>
-                <p className="text-sm text-muted-foreground">
-                  {exercise.defaultRestSeconds}s
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Stimulus-to-Fatigue Ratio (SFR)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Zap className={`h-5 w-5 ${sfrLabel.color}`} />
-            <div>
-              <p className="font-semibold">{sfrLabel.text}</p>
-              <p className="text-sm text-muted-foreground">{sfrLabel.desc}</p>
-            </div>
-          </div>
-          <Separator className="my-4" />
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>
-              <strong>What is SFR?</strong> The Stimulus-to-Fatigue Ratio measures how
-              much muscle growth stimulus an exercise provides relative to the systemic
-              and local fatigue it generates.
-            </p>
-            <p>
-              High SFR exercises (like cable flies, leg extensions) give great stimulus
-              with minimal recovery cost. Low SFR exercises (like barbell squats, deadlifts)
-              are effective but generate significant fatigue — use them strategically.
-            </p>
-            {exercise.isStretchFocused && (
-              <p>
-                <strong>Stretch-focused:</strong> This exercise loads the muscle in its
-                lengthened position, which research suggests may enhance hypertrophy
-                through greater mechanical tension at long muscle lengths.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Muscle Groups
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-medium mb-1">Primary</p>
-              <div className="flex flex-wrap gap-2">
-                {mg.primary.map((g) => (
-                  <Badge key={g} className="capitalize">
-                    {g.replace(/_/g, " ")}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            {mg.secondary.length > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Secondary</p>
-                <div className="flex flex-wrap gap-2">
-                  {mg.secondary.map((g) => (
-                    <Badge key={g} variant="secondary" className="capitalize">
-                      {g.replace(/_/g, " ")}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-// ─── User's Performance History ───────────────────────────────────
-
-async function PerformanceHistory({ exerciseId }: { exerciseId: number }) {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  const userId = parseInt(session.user.id as string);
-
-  // Get all sets for this exercise from completed sessions, ordered by date
+async function getPerformanceHistory(exerciseId: number, userId: number) {
   const sets = await db
     .select({
+      sessionId: exerciseSets.sessionId,
       weight: exerciseSets.weight,
       reps: exerciseSets.reps,
-      rir: exerciseSets.rir,
-      date: workoutSessions.date,
+      sessionDate: workoutSessions.date,
       sessionName: workoutSessions.sessionName,
-      sessionId: workoutSessions.id,
     })
     .from(exerciseSets)
     .innerJoin(workoutSessions, eq(exerciseSets.sessionId, workoutSessions.id))
     .where(
       and(
         eq(exerciseSets.exerciseId, exerciseId),
-        eq(workoutSessions.userId, userId),
-        eq(workoutSessions.status, "completed")
+        eq(workoutSessions.userId, userId)
       )
     )
-    .orderBy(asc(workoutSessions.date), asc(exerciseSets.setNumber));
+    .orderBy(desc(workoutSessions.date));
 
-  if (sets.length === 0) return null;
-
-  // Group by session
-  const sessionMap: Record<
+  const sessionMap = new Map<
     number,
     {
       date: Date;
       sessionName: string;
-      sets: { weight: number; reps: number; rir: number | null }[];
+      sets: { weight: number; reps: number }[];
     }
-  > = {};
+  >();
 
-  for (const set of sets) {
-    if (!sessionMap[set.sessionId]) {
-      sessionMap[set.sessionId] = {
-        date: set.date,
+  sets.forEach((set) => {
+    if (!sessionMap.has(set.sessionId)) {
+      sessionMap.set(set.sessionId, {
+        date: set.sessionDate,
         sessionName: set.sessionName,
         sets: [],
-      };
+      });
     }
-    sessionMap[set.sessionId].sets.push({
+    sessionMap.get(set.sessionId)!.sets.push({
       weight: set.weight,
       reps: set.reps,
-      rir: set.rir,
     });
-  }
+  });
 
-  const historyData = Object.values(sessionMap)
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .map((s) => {
-      const topSet = s.sets.reduce(
-        (best, curr) => (curr.weight > best.weight ? curr : best),
-        s.sets[0]
+  const history = Array.from(sessionMap.entries())
+    .map(([sessionId, data]) => {
+      const topSet = data.sets.reduce(
+        (max, s) => (s.weight > max.weight ? s : max),
+        data.sets[0]
       );
-      const avgWeight =
-        Math.round(
-          (s.sets.reduce((sum, v) => sum + v.weight, 0) / s.sets.length) * 10
-        ) / 10;
-      const avgReps =
-        Math.round(
-          (s.sets.reduce((sum, v) => sum + v.reps, 0) / s.sets.length) * 10
-        ) / 10;
-      const rirsWithValues = s.sets.filter((v) => v.rir !== null);
-      const avgRir =
-        rirsWithValues.length > 0
-          ? Math.round(
-              (rirsWithValues.reduce((sum, v) => sum + v.rir!, 0) /
-                rirsWithValues.length) *
-                10
-            ) / 10
-          : null;
+      const avgWeight = Math.round(
+        data.sets.reduce((sum, s) => sum + s.weight, 0) / data.sets.length
+      );
+      const avgReps = Math.round(
+        data.sets.reduce((sum, s) => sum + s.reps, 0) / data.sets.length
+      );
 
       return {
-        date: s.date.toISOString(),
-        sessionName: s.sessionName,
-        topSetWeight: topSet.weight,
-        topSetReps: topSet.reps,
+        sessionId,
+        date: data.date,
+        sessionName: data.sessionName,
+        topSetWeight: topSet?.weight ?? 0,
+        topSetReps: topSet?.reps ?? 0,
         avgWeight,
         avgReps,
-        avgRir,
-        sets: s.sets.length,
+        totalSets: data.sets.length,
       };
-    });
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  if (historyData.length === 0) return null;
+  return history;
+}
 
+function formatMovementPattern(pattern: string): string {
+  return pattern.replace(/_/g, " ");
+}
+
+function PerformanceSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <TrendingUp className="h-4 w-4" />
-          Your Performance History
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ExerciseHistoryChart data={historyData} />
-        <ExerciseHistoryTable data={historyData} />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-[280px] w-full rounded-lg" />
+      <Skeleton className="h-40 w-full rounded-lg" />
+    </div>
   );
 }
 
 function ExerciseDetailSkeleton() {
   return (
-    <>
-      <div>
-        <Skeleton className="h-4 w-40 mb-2" />
-        <Skeleton className="h-9 w-64 mb-3" />
-        <div className="flex gap-2">
-          <Skeleton className="h-6 w-20" />
-          <Skeleton className="h-6 w-20" />
-        </div>
+    <div className="space-y-6">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-8 w-64" />
+      <div className="flex gap-1.5">
+        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-16" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card><CardContent className="py-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
-        <Card><CardContent className="py-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+      <div className="grid grid-cols-2 gap-3">
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
       </div>
-      <Card><CardContent className="py-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
-    </>
+    </div>
   );
 }
 
-export default async function ExerciseDetailPage({
-  params,
-}: {
-  params: Promise<{ exerciseId: string }>;
-}) {
-  const { exerciseId } = await params;
-  const id = parseInt(exerciseId);
-  if (isNaN(id)) notFound();
+export default function ExerciseDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<ExerciseDetailSkeleton />}>
+      <ExerciseContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ExerciseContent({ params }: Props) {
+  const { exerciseId: id } = await params;
+  const exerciseId = parseInt(id);
+
+  if (isNaN(exerciseId)) {
+    notFound();
+  }
+
+  const session = await auth();
+  const userId = session?.user?.id ? parseInt(session.user.id as string) : 0;
+
+  const exercise = await getExercise(exerciseId);
+
+  if (!exercise) {
+    notFound();
+  }
+
+  const isCustom = exercise.userId !== null;
+  const canDelete = isCustom && exercise.userId === userId;
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <Suspense fallback={<ExerciseDetailSkeleton />}>
-        <ExerciseContent exerciseId={id} />
-      </Suspense>
-      <Suspense
-        fallback={
-          <Card>
-            <CardContent className="py-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-        }
+    <div className="space-y-6">
+      {/* Back link */}
+      <Link
+        href="/exercises"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <PerformanceHistory exerciseId={id} />
+        <ArrowLeft className="h-4 w-4" />
+        Back to Exercises
+      </Link>
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {exercise.name}
+            </h1>
+            {isCustom && (
+              <Badge variant="secondary" className="text-xs">
+                <User className="h-3 w-3 mr-1" />
+                Custom
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide">
+            {exercise.equipment}
+          </p>
+        </div>
+        {canDelete && <DeleteExerciseButton exerciseId={exercise.id} />}
+      </div>
+
+      {/* Muscle badges */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {exercise.muscleGroups.primary.map((mg) => (
+            <MuscleGroupBadge key={mg} group={mg} />
+          ))}
+        </div>
+        {exercise.muscleGroups.secondary.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">
+              Secondary:
+            </span>
+            {exercise.muscleGroups.secondary.map((mg) => (
+              <MuscleGroupBadge key={mg} group={mg} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Info grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Movement
+            </p>
+            <p className="text-sm font-medium capitalize mt-0.5">
+              {formatMovementPattern(exercise.movementPattern)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Optimal Reps
+            </p>
+            <p className="text-sm font-medium tabular-nums mt-0.5">
+              {exercise.repRangeOptimal?.[0] ?? 8}–
+              {exercise.repRangeOptimal?.[1] ?? 12}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Rest Time
+            </p>
+            <p className="text-sm font-medium tabular-nums mt-0.5">
+              {Math.floor((exercise.defaultRestSeconds ?? 120) / 60)}:
+              {String((exercise.defaultRestSeconds ?? 120) % 60).padStart(
+                2,
+                "0"
+              )}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Equipment
+            </p>
+            <p className="text-sm font-medium capitalize mt-0.5">
+              {exercise.equipment}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* SFR Rating card */}
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Stimulus-to-Fatigue Ratio
+              </p>
+              <p className="text-sm font-medium capitalize mt-0.5">
+                {exercise.sfrRating ?? "Medium"}
+              </p>
+            </div>
+            <div
+              className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                exercise.sfrRating === "high"
+                  ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                  : exercise.sfrRating === "low"
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {exercise.sfrRating === "high"
+                ? "H"
+                : exercise.sfrRating === "low"
+                  ? "L"
+                  : "M"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stretch-focused callout */}
+      {exercise.isStretchFocused && (
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20">
+          <CardContent className="p-3 flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Stretch-Focused Exercise
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                This exercise emphasizes the stretched position for enhanced
+                muscle growth.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Performance history */}
+      <Suspense fallback={<PerformanceSkeleton />}>
+        <PerformanceHistory exerciseId={exerciseId} userId={userId} />
       </Suspense>
+    </div>
+  );
+}
+
+async function PerformanceHistory({
+  exerciseId,
+  userId,
+}: {
+  exerciseId: number;
+  userId: number;
+}) {
+  const history = await getPerformanceHistory(exerciseId, userId);
+
+  if (history.length === 0) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Performance History</h2>
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-center text-muted-foreground">
+              No logged sets yet. Complete a workout with this exercise to see
+              your progress.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const chartData = history.map((h) => ({
+    date: new Date(h.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    topWeight: h.topSetWeight,
+    avgWeight: h.avgWeight,
+  }));
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Performance History</h2>
+
+      {history.length >= 2 && (
+        <Card>
+          <CardContent className="p-4">
+            <PerformanceChart data={chartData} />
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Date</TableHead>
+                <TableHead className="text-xs">Top Set</TableHead>
+                <TableHead className="text-xs">Avg</TableHead>
+                <TableHead className="text-xs text-right">Sets</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.slice(-10).reverse().map((h) => (
+                <TableRow key={h.sessionId}>
+                  <TableCell className="text-xs tabular-nums">
+                    {new Date(h.date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-xs font-medium tabular-nums">
+                    {h.topSetWeight} × {h.topSetReps}
+                  </TableCell>
+                  <TableCell className="text-xs tabular-nums text-muted-foreground">
+                    {h.avgWeight} × {h.avgReps}
+                  </TableCell>
+                  <TableCell className="text-xs tabular-nums text-right">
+                    {h.totalSets}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

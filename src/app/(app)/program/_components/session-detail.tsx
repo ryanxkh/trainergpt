@@ -94,41 +94,41 @@ function SessionCard({ session }: { session: GridCell }) {
           </span>
           {session.status === "active" && session.sessionId && (
             <Link href="/workout">
-              <Button size="sm" variant="outline" className="h-7 text-xs">
+              <Button size="sm" variant="outline" className="h-8 min-h-[32px] text-xs font-semibold">
                 Continue
-                <ArrowRight className="ml-1 h-3 w-3" />
+                <ArrowRight className="ml-1.5 h-3 w-3" />
               </Button>
             </Link>
           )}
           {session.status === "planned" && session.sessionId && (
             <Button
               size="sm"
-              className="h-7 text-xs"
+              className="h-8 min-h-[32px] text-xs font-semibold"
               onClick={handleStart}
               disabled={isPending}
             >
               <Play className="mr-1 h-3 w-3" />
-              {isPending ? "..." : "Start"}
+              {isPending ? "Starting..." : "Start"}
             </Button>
           )}
         </div>
       </div>
 
       {/* Exercise list */}
-      <div className="divide-y">
+      <div className="divide-y divide-border/50">
         {session.exercises.map((ex, i) => (
           <div
             key={i}
-            className="flex items-center justify-between px-4 py-2 gap-2"
+            className="flex items-center justify-between px-4 py-2.5 gap-3 min-h-[40px]"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm truncate">{ex.exerciseName}</span>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-sm font-medium truncate">{ex.exerciseName}</span>
               {ex.muscleGroup && (
                 <MuscleGroupBadge group={ex.muscleGroup} />
               )}
             </div>
-            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0">
-              {ex.sets} &times; {ex.repRangeMin}–{ex.repRangeMax} @ {ex.rirTarget}R
+            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0 font-medium">
+              {ex.sets} &times; {ex.repRangeMin}–{ex.repRangeMax} @{ex.rirTarget}
             </span>
           </div>
         ))}

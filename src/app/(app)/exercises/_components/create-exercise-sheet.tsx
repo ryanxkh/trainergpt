@@ -104,12 +104,12 @@ export function CreateExerciseSheet() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          Add Exercise
+        <Button className="min-h-10">
+          <Plus className="h-4 w-4 mr-1.5" />
+          Create
         </Button>
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="overflow-y-auto pb-10">
         <SheetHeader>
           <SheetTitle>Create Custom Exercise</SheetTitle>
         </SheetHeader>
@@ -127,77 +127,91 @@ export function CreateExerciseSheet() {
           </div>
 
           {/* Primary Muscles */}
-          <div className="space-y-1.5">
-            <Label>Primary Muscles</Label>
-            <p className="text-xs text-muted-foreground">
-              Tap to select. At least one required.
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Primary Muscles</Label>
+            <p className="text-xs text-muted-foreground -mt-1">
+              At least one required.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {MUSCLE_GROUPS.map((mg) => (
-                <Badge
+                <button
                   key={`p-${mg}`}
-                  variant={primaryMuscles.includes(mg) ? "default" : "outline"}
-                  className="cursor-pointer capitalize text-xs"
+                  type="button"
                   onClick={() => toggleMuscle(mg, "primary")}
+                  className={`min-h-8 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-all active:scale-95 ${
+                    primaryMuscles.includes(mg)
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
                 >
                   {mg.replace(/_/g, " ")}
-                </Badge>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Secondary Muscles */}
-          <div className="space-y-1.5">
-            <Label>Secondary Muscles</Label>
-            <p className="text-xs text-muted-foreground">Optional.</p>
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Secondary Muscles</Label>
+            <p className="text-xs text-muted-foreground -mt-1">Optional.</p>
             <div className="flex flex-wrap gap-1.5">
               {MUSCLE_GROUPS.filter((mg) => !primaryMuscles.includes(mg)).map(
                 (mg) => (
-                  <Badge
+                  <button
                     key={`s-${mg}`}
-                    variant={
-                      secondaryMuscles.includes(mg) ? "secondary" : "outline"
-                    }
-                    className="cursor-pointer capitalize text-xs"
+                    type="button"
                     onClick={() => toggleMuscle(mg, "secondary")}
+                    className={`min-h-8 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-all active:scale-95 ${
+                      secondaryMuscles.includes(mg)
+                        ? "bg-secondary text-secondary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-accent"
+                    }`}
                   >
                     {mg.replace(/_/g, " ")}
-                  </Badge>
+                  </button>
                 )
               )}
             </div>
           </div>
 
           {/* Movement Pattern */}
-          <div className="space-y-1.5">
-            <Label>Movement Pattern</Label>
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Movement Pattern</Label>
             <div className="flex flex-wrap gap-1.5">
               {MOVEMENT_PATTERNS.map((mp) => (
-                <Badge
+                <button
                   key={mp.value}
-                  variant={movementPattern === mp.value ? "default" : "outline"}
-                  className="cursor-pointer text-xs"
+                  type="button"
                   onClick={() => setMovementPattern(mp.value)}
+                  className={`min-h-8 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-95 ${
+                    movementPattern === mp.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
                 >
                   {mp.label}
-                </Badge>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Equipment */}
-          <div className="space-y-1.5">
-            <Label>Equipment</Label>
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Equipment</Label>
             <div className="flex flex-wrap gap-1.5">
               {EQUIPMENT_OPTIONS.map((eq) => (
-                <Badge
+                <button
                   key={eq}
-                  variant={equipment === eq ? "default" : "outline"}
-                  className="cursor-pointer capitalize text-xs"
+                  type="button"
                   onClick={() => setEquipment(eq)}
+                  className={`min-h-8 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-all active:scale-95 ${
+                    equipment === eq
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
                 >
                   {eq}
-                </Badge>
+                </button>
               ))}
             </div>
           </div>
@@ -206,11 +220,11 @@ export function CreateExerciseSheet() {
           <Button
             onClick={handleSubmit}
             disabled={isPending || !canSubmit}
-            className="w-full"
+            className="w-full h-11 text-base font-semibold"
           >
             {isPending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Creating...
               </>
             ) : (

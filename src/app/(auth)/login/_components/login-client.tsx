@@ -57,8 +57,7 @@ export function LoginClient() {
         {/* OAuth buttons */}
         <Button
           variant="outline"
-          size="lg"
-          className="w-full"
+          className="w-full h-11 text-base font-medium"
           onClick={() => signIn("google", { callbackUrl: "/coach" })}
         >
           <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -84,8 +83,7 @@ export function LoginClient() {
 
         <Button
           variant="outline"
-          size="lg"
-          className="w-full"
+          className="w-full h-11 text-base font-medium"
           onClick={() => signIn("github", { callbackUrl: "/coach" })}
         >
           <svg
@@ -109,9 +107,9 @@ export function LoginClient() {
         </div>
 
         {/* Credentials form */}
-        <form onSubmit={handleCredentials} className="space-y-3">
+        <form onSubmit={handleCredentials} className="space-y-4">
           {mode === "register" && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
@@ -119,10 +117,11 @@ export function LoginClient() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="h-11"
               />
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -131,9 +130,10 @@ export function LoginClient() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="h-11"
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -143,14 +143,15 @@ export function LoginClient() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              className="h-11"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive font-medium">{error}</p>
           )}
 
-          <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
             {loading
               ? "Loading..."
               : mode === "signin"

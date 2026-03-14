@@ -59,10 +59,10 @@ export function HistorySessionCard({ session }: { session: SessionData }) {
   return (
     <>
       <Link href={`/workout/${session.id}`}>
-        <Card className="hover:bg-muted/50 transition-colors">
+        <Card className="hover:bg-muted/50 transition-colors cursor-pointer active:scale-[0.99]">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1 min-w-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold truncate">{session.sessionName}</p>
                   {!isComplete && (
@@ -71,43 +71,43 @@ export function HistorySessionCard({ session }: { session: SessionData }) {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     {new Date(session.date).toLocaleDateString()}
                   </span>
                   {session.durationMinutes && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 tabular-nums">
                       <Timer className="h-3 w-3" />
                       {session.durationMinutes}m
                     </span>
                   )}
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 tabular-nums">
                     <Dumbbell className="h-3 w-3" />
                     {session.setCount} sets
                   </span>
-                  <span>{session.totalVolume.toLocaleString()} lbs</span>
+                  <span className="tabular-nums">{session.totalVolume.toLocaleString()} lbs</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1.5">
                   {session.exerciseNames.slice(0, 5).map((name) => (
-                    <Badge key={name} variant="outline" className="text-xs">
+                    <Badge key={name} variant="outline" className="text-[11px] font-medium">
                       {name}
                     </Badge>
                   ))}
                   {session.exerciseNames.length > 5 && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-[11px] font-medium">
                       +{session.exerciseNames.length - 5}
                     </Badge>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleDelete}
                   title="Delete workout"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="h-10 w-10 text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

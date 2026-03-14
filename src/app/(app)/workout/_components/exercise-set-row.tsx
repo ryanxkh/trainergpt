@@ -115,31 +115,31 @@ export function CompletedSetRow({
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="flex items-center gap-3 py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md w-full text-left active:bg-green-500/[0.08] transition-colors"
+      className="flex items-center gap-2 min-h-11 py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md w-full text-left active:bg-green-500/[0.08] transition-colors"
     >
-      <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums">
+      <span className="text-xs font-medium text-muted-foreground w-6 tabular-nums shrink-0">
         {setNumber}
       </span>
-      <span className="text-sm font-medium tabular-nums">
+      <span className="text-sm font-semibold tabular-nums">
         {weight}
-        <span className="text-muted-foreground text-xs ml-0.5">lbs</span>
+        <span className="text-muted-foreground text-xs font-normal ml-0.5">lbs</span>
       </span>
-      <span className="text-muted-foreground text-xs">&times;</span>
-      <span className="text-sm font-medium tabular-nums">{reps}</span>
+      <span className="text-muted-foreground text-sm">&times;</span>
+      <span className="text-sm font-semibold tabular-nums">{reps}</span>
       {rir !== null && (
-        <span className="text-xs text-muted-foreground">@ {rir} RIR</span>
+        <span className="text-xs text-muted-foreground font-medium">@{rir}</span>
       )}
       {setType === "myorep" && (
-        <span className="text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40 px-1.5 py-0.5 rounded">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40 px-1.5 py-0.5 rounded ml-auto">
           MYO
         </span>
       )}
       {setType === "dropset" && (
-        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded ml-auto">
           DROP
         </span>
       )}
-      <Check className="h-3.5 w-3.5 text-green-500 ml-auto shrink-0" />
+      <Check className={cn("h-4 w-4 text-green-500 shrink-0", setType === "normal" && "ml-auto")} />
     </button>
   );
 }
@@ -214,10 +214,10 @@ export function ActiveSetRow({
   };
 
   return (
-    <div className="py-2.5 border-l-2 border-primary pl-3 -ml-0.5 space-y-2 bg-primary/[0.03] dark:bg-primary/[0.06] rounded-r-md">
+    <div className="py-3 border-l-2 border-primary pl-3 -ml-0.5 space-y-2.5 bg-primary/[0.03] dark:bg-primary/[0.06] rounded-r-md">
       {/* Row 1: Set#, Weight, ×, Reps, Log */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-foreground w-5 tabular-nums">
+        <span className="text-xs font-bold text-foreground w-6 tabular-nums shrink-0">
           {setNumber}
         </span>
         <Input
@@ -226,52 +226,52 @@ export function ActiveSetRow({
           placeholder="lbs"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          className="h-11 w-20 text-center font-medium tabular-nums text-base"
+          className="h-11 w-[72px] text-center font-semibold tabular-nums text-base"
         />
-        <span className="text-muted-foreground text-xs">&times;</span>
+        <span className="text-muted-foreground text-sm">&times;</span>
         <Input
           type="number"
           inputMode="numeric"
           placeholder={`${target.repRangeMin}-${target.repRangeMax}`}
           value={reps}
           onChange={(e) => setReps(e.target.value)}
-          className="h-11 w-16 text-center font-medium tabular-nums text-base"
+          className="h-11 w-16 text-center font-semibold tabular-nums text-base"
         />
         <Button
-          className="h-11 px-5 ml-auto font-semibold"
+          className="h-11 flex-1 min-w-[72px] font-semibold text-base"
           onClick={handleLog}
           disabled={isPending}
         >
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log Set"}
         </Button>
       </div>
 
       {/* Row 2: RIR buttons + Set type pills */}
-      <div className="flex items-center gap-1.5 pl-7">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mr-0.5">RIR</span>
+      <div className="flex items-center gap-1.5 pl-8">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mr-1">RIR</span>
         {[0, 1, 2, 3, 4].map((v) => (
           <button
             key={v}
             type="button"
             onClick={() => setRir(v.toString())}
             className={cn(
-              "h-8 w-8 rounded-md text-xs font-medium transition-all",
+              "h-9 w-9 rounded-md text-sm font-semibold transition-all active:scale-95",
               rir === v.toString()
-                ? "bg-primary text-primary-foreground shadow-sm scale-105"
-                : "bg-muted text-muted-foreground hover:bg-accent active:scale-95"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-accent"
             )}
           >
             {v}
           </button>
         ))}
-        <span className="w-px h-4 bg-border mx-1" />
+        <span className="w-px h-5 bg-border mx-1.5" />
         {(["normal", "myorep", "dropset"] as const).map((type) => (
           <button
             key={type}
             type="button"
             onClick={() => setSetType(type)}
             className={cn(
-              "px-2 py-1 rounded-full text-[11px] font-medium transition-all",
+              "h-8 px-2.5 rounded-full text-[11px] font-semibold transition-all active:scale-95",
               setType === type
                 ? type === "myorep"
                   ? "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400"
@@ -287,12 +287,12 @@ export function ActiveSetRow({
       </div>
 
       {previousSet && (
-        <p className="text-[11px] text-muted-foreground pl-7">
-          Last: {previousSet.weight} &times; {previousSet.reps}
-          {previousSet.rir !== null ? ` @ ${previousSet.rir} RIR` : ""}
+        <p className="text-[11px] text-muted-foreground pl-8 font-medium">
+          <span className="opacity-70">Last:</span> {previousSet.weight} &times; {previousSet.reps}
+          {previousSet.rir !== null ? ` @${previousSet.rir}` : ""}
           {previousSet.setType !== "normal" && (
-            <span className="ml-1 opacity-70">
-              ({previousSet.setType === "myorep" ? "Myo-Rep" : "Drop Set"})
+            <span className="ml-1 opacity-60">
+              ({previousSet.setType === "myorep" ? "Myo" : "Drop"})
             </span>
           )}
         </p>
@@ -315,16 +315,16 @@ export function UpcomingSetRow({
   previousSet: PreviousSetData | undefined;
 }) {
   return (
-    <div className="flex items-center gap-3 py-2.5 pl-3 -ml-0.5 border-l-2 border-muted/50 rounded-r-md opacity-50">
-      <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums">
+    <div className="flex items-center gap-2 min-h-11 py-2.5 pl-3 -ml-0.5 border-l-2 border-dashed border-muted-foreground/30 rounded-r-md opacity-60">
+      <span className="text-xs font-medium text-muted-foreground w-6 tabular-nums shrink-0">
         {setNumber}
       </span>
       <span className="text-xs text-muted-foreground">
-        {target.repRangeMin}&ndash;{target.repRangeMax} reps @ {target.rirTarget} RIR
+        ~{previousSet?.weight ?? "?"} lbs &times; {target.repRangeMin}&ndash;{target.repRangeMax} @{target.rirTarget}
       </span>
       {previousSet && (
-        <span className="text-[11px] text-muted-foreground/70 ml-auto tabular-nums">
-          Last: {previousSet.weight} &times; {previousSet.reps}
+        <span className="text-[10px] text-muted-foreground/60 ml-auto tabular-nums font-medium">
+          Last: {previousSet.weight}&times;{previousSet.reps}
         </span>
       )}
     </div>

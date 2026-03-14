@@ -36,7 +36,7 @@ export default function CoachClient() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-9.5rem)] md:h-[calc(100vh-3rem)] flex-col">
+    <div className="flex h-[calc(100dvh-10rem)] md:h-[calc(100vh-6rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-auto pb-4 min-h-0">
         {messages.length === 0 && (
@@ -45,14 +45,14 @@ export default function CoachClient() {
               <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-lg font-medium">What can I help you with?</p>
             </div>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
+            <div className="flex flex-wrap gap-2 justify-center max-w-md px-4">
               {QUICK_PROMPTS.map((prompt) => (
                 <Button
                   key={prompt}
                   variant="outline"
-                  size="sm"
                   onClick={() => handleQuickPrompt(prompt)}
                   disabled={isLoading}
+                  className="min-h-11 h-auto px-4 py-2.5 text-sm font-medium"
                 >
                   {prompt}
                 </Button>
@@ -172,7 +172,7 @@ export default function CoachClient() {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t pt-4">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-4">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -186,7 +186,7 @@ export default function CoachClient() {
           disabled={isLoading}
           aria-label="Message your coach"
           rows={1}
-          className="flex-1 min-h-0 max-h-32 py-2"
+          className="flex-1 min-h-11 max-h-32 py-2.5 resize-none"
         />
         {isLoading ? (
           <Button
@@ -194,14 +194,16 @@ export default function CoachClient() {
             size="icon"
             variant="outline"
             onClick={() => stop()}
+            className="h-11 w-11 shrink-0"
           >
-            <Square className="h-3.5 w-3.5" />
+            <Square className="h-4 w-4" />
           </Button>
         ) : (
           <Button
             type="submit"
             disabled={!input.trim()}
             size="icon"
+            className="h-11 w-11 shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -257,17 +259,17 @@ function ToolResultCard({
     if (!r.success) return null;
     return (
       <Card className="my-2 p-3 bg-background">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-sm">{r.sessionName}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm">{r.sessionName}</p>
             <p className="text-xs text-muted-foreground">
               {r.exerciseCount} exercises, {r.totalSets} total sets
             </p>
           </div>
           <Link href="/workout">
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="min-h-9 shrink-0">
               Go to Today
-              <ArrowRight className="ml-1 h-3 w-3" />
+              <ArrowRight className="ml-1.5 h-3 w-3" />
             </Button>
           </Link>
         </div>
@@ -328,17 +330,17 @@ function ToolResultCard({
     if (!r.success) return null;
     return (
       <Card className="my-2 p-3 bg-background">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-sm">{r.name}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm">{r.name}</p>
             <p className="text-xs text-muted-foreground">
               {r.totalWeeks} weeks, {r.week1Sessions?.length ?? 0} sessions this week
             </p>
           </div>
           <Link href={`/program/${r.mesocycleId}`}>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="min-h-9 shrink-0">
               View Program
-              <ArrowRight className="ml-1 h-3 w-3" />
+              <ArrowRight className="ml-1.5 h-3 w-3" />
             </Button>
           </Link>
         </div>

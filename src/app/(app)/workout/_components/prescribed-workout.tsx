@@ -314,7 +314,7 @@ export default function PrescribedWorkout({
       })}
 
       {/* ── Complete Workout ────────────────────────────────── */}
-      <div className="rounded-lg border bg-card p-4 space-y-4 mb-24 md:mb-0">
+      <div className="rounded-lg border bg-card p-4 space-y-4">
         <Textarea
           placeholder="Post-workout notes — pumps, fatigue, joint issues..."
           value={postNotes}

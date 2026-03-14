@@ -66,13 +66,8 @@ async function ExerciseLibrary() {
 export default function ExercisesPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Exercise Library</h1>
-          <p className="text-muted-foreground mt-1">
-            Browse exercises or add your own.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Exercises</h1>
         <CreateExerciseSheet />
       </div>
 

@@ -71,15 +71,18 @@ function SelectButtons({
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((opt) => (
-        <Button
+        <button
           key={opt.value}
           type="button"
-          variant={value === opt.value ? "default" : "outline"}
-          size="sm"
           onClick={() => onChange(opt.value)}
+          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-95 ${
+            value === opt.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:bg-accent"
+          }`}
         >
           {opt.label}
-        </Button>
+        </button>
       ))}
     </div>
   );
@@ -206,18 +209,19 @@ export function SettingsClient({ data }: { data: SettingsData }) {
       <section className="space-y-4">
         <h2 className="text-lg font-medium">Profile</h2>
         <div className="space-y-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
+              className="h-11"
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Email</Label>
-            <Input value={data.user.email} disabled className="opacity-60" />
+            <Input value={data.user.email} disabled className="h-11 opacity-60" />
           </div>
           <div className="space-y-1.5">
             <Label>Experience Level</Label>
@@ -253,20 +257,22 @@ export function SettingsClient({ data }: { data: SettingsData }) {
       <section className="space-y-4">
         <h2 className="text-lg font-medium">Training Preferences</h2>
         <div className="space-y-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Training Days per Week</Label>
             <div className="flex gap-2">
               {[2, 3, 4, 5, 6].map((d) => (
-                <Button
+                <button
                   key={d}
                   type="button"
-                  variant={trainingDays === d ? "default" : "outline"}
-                  size="sm"
                   onClick={() => setTrainingDays(d)}
-                  className="w-10"
+                  className={`min-h-11 w-12 rounded-lg text-sm font-semibold transition-all active:scale-95 ${
+                    trainingDays === d
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
                 >
                   {d}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -293,11 +299,11 @@ export function SettingsClient({ data }: { data: SettingsData }) {
       <Button
         onClick={handleSaveProfile}
         disabled={isPending || !hasProfileChanges}
-        className="w-full sm:w-auto"
+        className="w-full sm:w-auto h-11 font-semibold"
       >
         {isPending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
             Saving...
           </>
         ) : (
@@ -318,11 +324,11 @@ export function SettingsClient({ data }: { data: SettingsData }) {
           </div>
           <Button
             variant="outline"
-            size="sm"
             onClick={handleResetLandmarks}
             disabled={isPending}
+            className="h-9"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
             Reset
           </Button>
         </div>

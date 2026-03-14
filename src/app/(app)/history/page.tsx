@@ -207,16 +207,16 @@ async function ExerciseProgression() {
                   <TableBody>
                     {data.slice(-5).map((entry, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs tabular-nums">
                           {new Date(entry.date).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-xs font-medium">
+                        <TableCell className="text-xs font-medium tabular-nums">
                           {entry.topSetWeight} x {entry.topSetReps}
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs tabular-nums">
                           {entry.avgWeight} x {entry.avgReps}
                         </TableCell>
-                        <TableCell className="text-xs">{entry.sets}</TableCell>
+                        <TableCell className="text-xs tabular-nums">{entry.sets}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

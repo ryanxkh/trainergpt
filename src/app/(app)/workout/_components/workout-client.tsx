@@ -43,6 +43,7 @@ import {
   Search,
   MessageSquare,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -212,11 +213,13 @@ function PlannedSessionList({
   onSessionStarted: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [startingId, setStartingId] = useState<number | null>(null);
 
   // Find the best session to suggest (first planned one by day number)
   const nextPlanned = data.sessions.find((s) => s.status === "planned");
 
   const handleStart = (sessionId: number) => {
+    setStartingId(sessionId);
     startTransition(async () => {
       const result = await startPlannedSession(sessionId);
       if (result.success) {
@@ -224,6 +227,7 @@ function PlannedSessionList({
         onSessionStarted();
       } else {
         toast.error(result.error);
+        setStartingId(null);
       }
     });
   };
@@ -237,46 +241,48 @@ function PlannedSessionList({
         <h1 className="text-2xl font-semibold tracking-tight">This Week</h1>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {data.sessions.map((session) => {
           const dayLabel = session.dayNumber ? DAY_LABELS[session.dayNumber] : "";
           const isNext = nextPlanned?.id === session.id;
           const isStartable = session.status === "planned";
           const isDone = session.status === "completed" || session.status === "abandoned";
+          const isStarting = startingId === session.id;
 
           return (
             <Card
               key={session.id}
               className={cn(
                 "transition-all",
-                isDone && "opacity-60",
-                isNext && "border-primary/50",
+                isDone && "opacity-50",
+                isNext && "border-primary/50 shadow-sm",
               )}
             >
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+              <CardContent className="flex items-center justify-between gap-3 p-4">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {dayLabel && (
-                      <span className="text-xs font-medium text-muted-foreground uppercase">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                         {dayLabel}
                       </span>
                     )}
                     <span className="font-semibold text-sm">{session.sessionName}</span>
                     {session.isDeload && (
-                      <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 text-[10px]">
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 text-[10px] px-1.5 py-0">
                         Deload
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {session.exercisePreview.join(", ")}
-                    {session.exerciseCount > 3 && ` +${session.exerciseCount - 3} more`}
-                    {" · "}{session.exerciseCount} exercises
+                  <p className="text-xs text-muted-foreground truncate">
+                    {session.exercisePreview.slice(0, 3).join(", ")}
+                    {session.exerciseCount > 3 && ` +${session.exerciseCount - 3}`}
+                    <span className="mx-1.5 opacity-50">&middot;</span>
+                    {session.exerciseCount} exercises
                   </p>
                 </div>
                 <div className="shrink-0">
                   {isDone && (
-                    <Badge variant="secondary" className="text-green-700 dark:text-green-400">
+                    <Badge variant="secondary" className="text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-950/40">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                       Done
                     </Badge>
@@ -287,13 +293,18 @@ function PlannedSessionList({
                       onClick={() => handleStart(session.id)}
                       disabled={isPending}
                       variant={isNext ? "default" : "outline"}
+                      className={cn("min-h-9 font-semibold", isNext && "shadow-sm")}
                     >
-                      <Play className="mr-1 h-3 w-3" />
-                      {isPending ? "..." : "Start"}
+                      {isStarting ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Play className="mr-1 h-3 w-3" />
+                      )}
+                      {isStarting ? "Starting..." : "Start"}
                     </Button>
                   )}
                   {session.status === "active" && (
-                    <Badge>Active</Badge>
+                    <Badge className="bg-primary/15 text-primary border-primary/30">Active</Badge>
                   )}
                 </div>
               </CardContent>
@@ -954,33 +965,38 @@ export default function WorkoutPage({
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Header skeleton */}
         <div className="space-y-3">
-          <Skeleton className="h-3 w-40" />
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-3 w-44" />
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <Skeleton className="h-6 w-40" />
+            </div>
             <div className="flex items-center gap-3">
               <Skeleton className="h-8 w-20 rounded-md" />
-              <Skeleton className="h-5 w-12" />
+              <Skeleton className="h-5 w-14" />
             </div>
           </div>
           <Skeleton className="h-1.5 w-full rounded-full" />
         </div>
         {/* Exercise card skeletons */}
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3, 4].map((i) => (
           <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-16 rounded-full" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-2 flex-1">
+                <div className="flex gap-1.5">
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
                 <Skeleton className="h-5 w-36" />
-                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-16" />
               </div>
               <Skeleton className="h-7 w-12 rounded-full" />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {[1, 2, 3].map((j) => (
-                <Skeleton key={j} className="h-10 w-full rounded" />
+                <Skeleton key={j} className="h-11 w-full rounded-md" />
               ))}
             </div>
           </div>

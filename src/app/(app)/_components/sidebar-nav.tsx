@@ -29,15 +29,15 @@ export function SidebarNav() {
             className={cn(
               "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               isActive
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                ? "bg-accent font-medium text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
             {isActive && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-primary" />
+              <span className="absolute left-0 top-1/2 bottom-1/2 h-full w-1 -translate-y-1/2 rounded-r bg-primary" />
             )}
-            <item.icon className="h-4 w-4" />
-            {item.label}
+            <item.icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}

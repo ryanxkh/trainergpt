@@ -33,7 +33,7 @@ async function UserSection() {
   if (!session?.user) return null;
 
   return (
-    <div className="mt-auto border-t p-4 space-y-3">
+    <div className="mt-auto border-t border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
         <ThemeToggle />
       </div>
@@ -61,13 +61,13 @@ async function UserSection() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col md:flex-row">
       <Suspense>
         <OnboardingGuard />
       </Suspense>
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 border-r bg-muted/40 md:flex md:flex-col">
-        <div className="flex h-16 items-center border-b px-4">
+      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-border bg-muted/40 md:flex">
+        <div className="flex h-16 items-center border-b border-border px-4">
           <Link href="/coach" className="flex items-center gap-2 font-bold">
             <Dumbbell className="h-6 w-6" />
             <span>TrainerGPT</span>
@@ -78,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </Suspense>
         <Suspense
           fallback={
-            <div className="mt-auto border-t p-4">
+            <div className="mt-auto border-t border-border p-4">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-8 w-full" />
               </div>
@@ -90,8 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto pb-20 md:pb-0">
-        <div className="container mx-auto p-4 md:p-6">{children}</div>
+      <main className="flex flex-1 flex-col overflow-auto" style={{ overscrollBehavior: "contain" }}>
+        <div className="container mx-auto flex-1 p-4 pb-20 md:pb-6 md:p-6">
+          {children}
+        </div>
       </main>
 
       {/* Mobile bottom nav */}

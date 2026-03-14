@@ -36,11 +36,11 @@ export default function CoachClient() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-10rem)] md:h-[calc(100vh-6rem)] flex-col">
+    <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-auto pb-4 min-h-0">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full space-y-6">
+          <div className="flex flex-col items-center justify-end h-full space-y-4 pb-6">
             <div className="text-center space-y-2">
               <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-lg font-medium">What can I help you with?</p>
@@ -172,7 +172,7 @@ export default function CoachClient() {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-4">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border md:border-t pt-3 md:pt-4">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}

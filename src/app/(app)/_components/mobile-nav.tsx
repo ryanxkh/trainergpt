@@ -18,8 +18,8 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm md:hidden">
-      <div className="flex h-16 items-stretch pb-[env(safe-area-inset-bottom)]" role="tablist">
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden" style={{ touchAction: "manipulation" }}>
+      <div className="flex h-16 items-stretch" role="tablist">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
           return (

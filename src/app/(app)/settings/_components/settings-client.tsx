@@ -98,7 +98,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
     data.user.experienceLevel ?? "intermediate"
   );
   const [trainingAge, setTrainingAge] = useState(
-    data.user.trainingAgeMonths ?? 0
+    (data.user.trainingAgeMonths ?? 0).toString()
   );
   const [trainingDays, setTrainingDays] = useState(
     data.user.availableTrainingDays ?? 4
@@ -117,7 +117,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
   const hasProfileChanges =
     name !== (data.user.name ?? "") ||
     experienceLevel !== (data.user.experienceLevel ?? "intermediate") ||
-    trainingAge !== (data.user.trainingAgeMonths ?? 0) ||
+    parseInt(trainingAge) !== (data.user.trainingAgeMonths ?? 0) ||
     trainingDays !== (data.user.availableTrainingDays ?? 4) ||
     split !== (data.user.preferredSplit ?? "upper_lower") ||
     equipment !== (data.user.equipmentAccess ?? "commercial");
@@ -130,7 +130,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
           | "beginner"
           | "intermediate"
           | "advanced",
-        trainingAgeMonths: trainingAge,
+        trainingAgeMonths: parseInt(trainingAge) || 0,
         availableTrainingDays: trainingDays,
         preferredSplit: split as
           | "full_body"
@@ -244,7 +244,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
               type="number"
               min={0}
               value={trainingAge}
-              onChange={(e) => setTrainingAge(parseInt(e.target.value) || 0)}
+              onChange={(e) => setTrainingAge(e.target.value)}
               className="w-24"
             />
           </div>

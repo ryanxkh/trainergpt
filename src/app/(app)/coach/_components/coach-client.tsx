@@ -166,7 +166,7 @@ export default function CoachClient() {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border md:border-t pt-3 md:pt-4">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-3 md:pt-4">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}

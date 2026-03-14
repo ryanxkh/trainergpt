@@ -164,7 +164,6 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 10;
-  @apply hidden md:hidden;
 }
 
 .scroll-chip-container.can-scroll-left::before {
@@ -184,11 +183,18 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 10;
-  @apply hidden md:hidden;
 }
 
 .scroll-chip-container.can-scroll-right::after {
   opacity: 1;
+}
+
+/* Hide fade gradients on desktop where chips wrap */
+@media (min-width: 768px) {
+  .scroll-chip-container::before,
+  .scroll-chip-container::after {
+    display: none;
+  }
 }
 
 /* Scroll hint arrow animation */

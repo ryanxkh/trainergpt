@@ -145,3 +145,69 @@
 .animate-message-in {
   animation: message-in 0.2s ease-out both;
 }
+
+/* Scroll affordance for horizontal chip containers */
+.scroll-chip-container {
+  position: relative;
+}
+
+/* Left fade gradient - shows when scrolled right */
+.scroll-chip-container::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, var(--background), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  @apply hidden md:hidden;
+}
+
+.scroll-chip-container.can-scroll-left::before {
+  opacity: 1;
+}
+
+/* Right fade gradient - shows when more content exists to the right */
+.scroll-chip-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to left, var(--background), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  @apply hidden md:hidden;
+}
+
+.scroll-chip-container.can-scroll-right::after {
+  opacity: 1;
+}
+
+/* Scroll hint arrow animation */
+@keyframes scroll-hint-slide {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+.scroll-hint {
+  animation: scroll-hint-slide 1.5s ease-out forwards;
+}
+

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Sparkles, Search, User } from "lucide-react";
+import { ChevronRight, Sparkles, Search, User, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { MuscleGroupBadge } from "@/app/(app)/workout/_components/muscle-group-badge";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,38 @@ export function ExerciseFilter({
 }) {
   const [search, setSearch] = useState("");
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [showHint, setShowHint] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Check scroll position
+  const checkScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  // Handle scroll and hide hint
+  const handleScroll = () => {
+    checkScroll();
+    if (showHint) {
+      setShowHint(false);
+    }
+  };
+
+  // Check scroll on mount and when groups change
+  useEffect(() => {
+    checkScroll();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, [groups, showHint]);
 
   const filtered = exercises.filter((ex) => {
     const mg = ex.muscleGroups as { primary: string[]; secondary: string[] };
@@ -79,37 +111,52 @@ export function ExerciseFilter({
             className="pl-10 h-11"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
-          <button
-            onClick={() => setActiveGroup(null)}
-            className={cn(
-              "shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95",
-              activeGroup === null
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            )}
+        <div className={cn(
+          "scroll-chip-container",
+          canScrollLeft && "can-scroll-left",
+          canScrollRight && "can-scroll-right"
+        )}>
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap relative"
           >
-            All ({exercises.length})
-          </button>
-          {groups.sort((a, b) => MUSCLE_ORDER.indexOf(a) - MUSCLE_ORDER.indexOf(b)).map((group) => {
-            const count = exercises.filter((ex) =>
-              (ex.muscleGroups as { primary: string[] }).primary.includes(group)
-            ).length;
-            return (
-              <button
-                key={group}
-                onClick={() => setActiveGroup(activeGroup === group ? null : group)}
-                className={cn(
-                  "shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-medium capitalize transition-all active:scale-95",
-                  activeGroup === group
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-accent"
-                )}
-              >
-                {group.replace(/_/g, " ")} ({count})
-              </button>
-            );
-          })}
+            <button
+              onClick={() => setActiveGroup(null)}
+              className={cn(
+                "shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95",
+                activeGroup === null
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              )}
+            >
+              All ({exercises.length})
+            </button>
+            {groups.sort((a, b) => MUSCLE_ORDER.indexOf(a) - MUSCLE_ORDER.indexOf(b)).map((group) => {
+              const count = exercises.filter((ex) =>
+                (ex.muscleGroups as { primary: string[] }).primary.includes(group)
+              ).length;
+              return (
+                <button
+                  key={group}
+                  onClick={() => setActiveGroup(activeGroup === group ? null : group)}
+                  className={cn(
+                    "shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-medium capitalize transition-all active:scale-95",
+                    activeGroup === group
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  )}
+                >
+                  {group.replace(/_/g, " ")} ({count})
+                </button>
+              );
+            })}
+          </div>
+          {/* Scroll hint arrow - shows on first render, fades after scroll */}
+          {showHint && canScrollRight && (
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 md:hidden">
+              <ArrowRight className="h-4 w-4 text-muted-foreground scroll-hint" />
+            </div>
+          )}
         </div>
       </div>
 

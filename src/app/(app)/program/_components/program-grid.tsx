@@ -74,18 +74,18 @@ export function ProgramGrid({
                 <th
                   key={week.weekNumber}
                   className={cn(
-                    "border-b px-1.5 py-2.5 text-center min-w-[76px] cursor-pointer transition-colors",
+                    "border-b px-1.5 py-3 text-center min-w-[76px] cursor-pointer transition-colors hover:bg-muted/50 active:scale-[0.98]",
                     week.isCompleted &&
-                      "bg-green-50/80 dark:bg-green-950/20",
+                      "bg-green-50/80 dark:bg-green-950/20 hover:bg-green-100/80 dark:hover:bg-green-950/30",
                     week.isCurrent &&
                       !week.isCompleted &&
-                      "bg-primary/5",
+                      "bg-primary/5 hover:bg-primary/10",
                     week.isDeload &&
                       !week.isCompleted &&
                       !week.isCurrent &&
-                      "bg-amber-50/80 dark:bg-amber-950/20",
+                      "bg-amber-50/80 dark:bg-amber-950/20 hover:bg-amber-100/80 dark:hover:bg-amber-950/30",
                     isSelected &&
-                      "bg-primary/10 dark:bg-primary/10",
+                      "bg-primary/10 dark:bg-primary/15 ring-1 ring-inset ring-primary/20",
                   )}
                   onClick={() => onWeekSelect(week.weekNumber)}
                 >
@@ -154,7 +154,7 @@ export function ProgramGrid({
                       type="button"
                       onClick={() => onWeekSelect(week.weekNumber)}
                       className={cn(
-                        "w-full rounded-md px-2 py-1.5 text-[11px] font-medium transition-all text-left leading-tight",
+                        "w-full rounded-md px-2 py-2 min-h-[36px] text-[11px] font-medium transition-all text-left leading-tight cursor-pointer active:scale-[0.98]",
                         cell.status === "completed" &&
                           "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
                         cell.status === "active" &&

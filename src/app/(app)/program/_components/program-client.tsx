@@ -19,6 +19,7 @@ import { ProgramGrid, type GridCell, type WeekHeader } from "./program-grid";
 import { WeekDetail } from "./session-detail";
 import { VolumeOverview } from "./volume-overview";
 import { GenerateMesocycleForm } from "./generate-form";
+import { MesoCompleteDialog } from "./meso-complete-dialog";
 import type { ProgramData } from "../actions";
 import { completeMesocycle } from "../actions";
 
@@ -32,18 +33,20 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
   const [selectedWeek, setSelectedWeek] = useState(mesocycle.currentWeek);
   const [isPending, startTransition] = useTransition();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showMesoComplete, setShowMesoComplete] = useState(false);
   const router = useRouter();
 
   const handleCompleteMesocycle = () => {
     startTransition(async () => {
       const result = await completeMesocycle(mesocycle.id);
       if (result.success) {
-        toast.success("Mesocycle completed");
-        router.refresh();
+        toast.success("Mesocycle completed!");
+        setShowCompleteDialog(false);
+        setShowMesoComplete(true);
       } else {
         toast.error(result.error ?? "Failed to complete mesocycle");
+        setShowCompleteDialog(false);
       }
-      setShowCompleteDialog(false);
     });
   };
 
@@ -397,6 +400,14 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         weekNumber={selectedWeek}
         actualVolume={actualVolume}
         landmarks={volumeLandmarks}
+      />
+
+      {/* End-of-meso flow: deload prompt → re-run prompt */}
+      <MesoCompleteDialog
+        open={showMesoComplete}
+        onOpenChange={setShowMesoComplete}
+        mesoId={mesocycle.id}
+        mesoName={mesocycle.name}
       />
     </div>
   );

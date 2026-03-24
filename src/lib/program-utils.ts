@@ -33,6 +33,7 @@ export type SessionPlanWeek = {
 };
 
 export type SessionPlan = {
+  templateSlug?: string; // If created from a pre-loaded template
   weeks: SessionPlanWeek[];
 };
 

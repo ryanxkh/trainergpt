@@ -1,7 +1,8 @@
 import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import { COACH_SYSTEM_PROMPT, ADVANCED_COACHING_ADDENDUM } from "@/lib/ai";
+import { buildSystemPrompt } from "@/lib/ai";
+import { generateSessionBriefing } from "@/lib/briefing";
 import { db } from "@/lib/db";
 import {
   users,
@@ -36,9 +37,14 @@ export async function POST(req: Request) {
   // Feature flag — model selection resolved from Edge Config (no redeploy needed)
   const modelId = await aiModel();
 
-  const systemPrompt = `${COACH_SYSTEM_PROMPT}\n\n${ADVANCED_COACHING_ADDENDUM}`;
-
   const { messages } = await req.json();
+
+  // Generate session briefing (cached data, non-blocking on failure)
+  const briefingResult = await generateSessionBriefing(userId);
+  const systemPrompt = buildSystemPrompt({
+    sessionBriefing: briefingResult?.xml ?? null,
+    advancedCoaching: true,
+  });
 
   const result = streamText({
     model: anthropic(modelId),

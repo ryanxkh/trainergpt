@@ -53,8 +53,9 @@ gh auth setup-git && git push
 
 | File | Purpose |
 |------|---------|
-| `src/lib/ai.ts` | System prompt (XML-structured) + model config |
-| `src/app/api/chat/route.ts` | AI chat endpoint — 7 tools, `streamText`, `stopWhen: stepCountIs(7)` |
+| `src/lib/ai.ts` | System prompt (XML-structured), `buildSystemPrompt()` with optional briefing injection |
+| `src/lib/briefing.ts` | `generateSessionBriefing(userId)` — gathers profile/volume/history/progression data, returns XML for system prompt |
+| `src/app/api/chat/route.ts` | AI chat endpoint — 11 tools, `streamText`, `stopWhen: stepCountIs(10)`, session briefing |
 | `src/lib/cache.ts` | Redis caching: volume, profile, exercises, weekly summary, deload |
 | `src/lib/db/schema.ts` | 6 Drizzle tables + relations |
 | `src/lib/db/index.ts` | Lazy DB connection via Proxy (builds work without env vars) |
@@ -95,6 +96,10 @@ Client (useChat/sendMessage) → /api/chat POST
 ### System Prompt Structure (`src/lib/ai.ts`)
 
 The prompt uses XML sections: `<background_information>`, `<instructions>` (with HARD RULES), `<tool_guidance>`, `<output_format>`, `<edge_cases>`, `<examples>`. The `ADVANCED_COACHING_ADDENDUM` is toggled via the `enable-advanced-coaching` feature flag.
+
+### Session Briefing System (`src/lib/briefing.ts`)
+
+On every chat request, `generateSessionBriefing(userId)` gathers cached profile, volume, deload, and recent workout data in parallel. It computes: mesocycle position, volume status per muscle group, muscle groups below MEV, progression flags (stall/overreach/ready-to-increase), deload status, and a prioritized recommendation. The result is formatted as `<session_briefing>` XML injected into the system prompt between `<background_information>` and `<instructions>`. The coach client auto-sends "Hey coach, what's the plan?" on mount, and the proactive coaching instruction tells the LLM to lead with its most actionable insight rather than waiting for the user to ask. Returns null gracefully for new users or on failure.
 
 ## AI SDK v6 Patterns
 

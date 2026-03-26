@@ -183,13 +183,13 @@ export function ExerciseFilter({
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-sm truncate">{ex.name}</h3>
                               {ex.userId && (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                                <Badge variant="secondary" className="text-[11px] px-1.5 py-0 shrink-0">
                                   <User className="h-2.5 w-2.5 mr-0.5" />
                                   Custom
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">
+                            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">
                               {ex.equipment}
                             </p>
                           </div>

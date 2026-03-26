@@ -78,40 +78,43 @@ function SessionCard({ session }: { session: GridCell }) {
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       {/* Session header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b bg-muted/30">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[11px] font-medium text-muted-foreground uppercase w-8 shrink-0">
-            {DAY_LABELS[session.dayNumber]?.slice(0, 3) ?? `D${session.dayNumber}`}
-          </span>
-          <span className="text-sm font-semibold truncate">
-            {session.sessionName}
-          </span>
-          <StatusBadge status={session.status} />
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] text-muted-foreground tabular-nums">
+      <div className="px-4 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-medium text-muted-foreground uppercase shrink-0">
+              {DAY_LABELS[session.dayNumber]?.slice(0, 3) ?? `D${session.dayNumber}`}
+            </span>
+            <span className="text-sm font-semibold truncate">
+              {session.sessionName}
+            </span>
+            <StatusBadge status={session.status} />
+          </div>
+          <span className="text-xs text-muted-foreground tabular-nums shrink-0">
             {session.exercises.length} ex · {totalSets} sets
           </span>
-          {session.status === "active" && session.sessionId && (
-            <Link href="/workout">
-              <Button size="sm" variant="outline" className="h-8 min-h-[32px] text-xs font-semibold">
-                Continue
-                <ArrowRight className="ml-1.5 h-3 w-3" />
-              </Button>
-            </Link>
-          )}
-          {session.status === "planned" && session.sessionId && (
-            <Button
-              size="sm"
-              className="h-8 min-h-[32px] text-xs font-semibold"
-              onClick={handleStart}
-              disabled={isPending}
-            >
-              <Play className="mr-1 h-3 w-3" />
-              {isPending ? "Starting..." : "Start"}
-            </Button>
-          )}
         </div>
+        {(session.status === "active" || session.status === "planned") && session.sessionId && (
+          <div>
+            {session.status === "active" ? (
+              <Link href="/workout">
+                <Button size="sm" variant="outline" className="w-full">
+                  Continue
+                  <ArrowRight className="ml-1.5 h-3 w-3" />
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={handleStart}
+                disabled={isPending}
+              >
+                <Play className="mr-1 h-3 w-3" />
+                {isPending ? "Starting..." : "Start Workout"}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Exercise list */}
@@ -119,12 +122,14 @@ function SessionCard({ session }: { session: GridCell }) {
         {session.exercises.map((ex, i) => (
           <div
             key={i}
-            className="flex items-center justify-between px-4 py-2.5 gap-3 min-h-[40px]"
+            className="flex items-center justify-between px-4 py-3 gap-2 min-h-[44px]"
           >
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <span className="text-sm font-medium truncate">{ex.exerciseName}</span>
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-medium truncate block">{ex.exerciseName}</span>
               {ex.muscleGroup && (
-                <MuscleGroupBadge group={ex.muscleGroup} />
+                <div className="mt-0.5">
+                  <MuscleGroupBadge group={ex.muscleGroup} />
+                </div>
               )}
             </div>
             <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0 font-medium">

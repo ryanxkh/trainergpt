@@ -217,7 +217,7 @@ async function ExerciseContent({ params }: Props) {
         </div>
         {exercise.muscleGroups.secondary.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wide mr-1">
               Secondary:
             </span>
             {exercise.muscleGroups.secondary.map((mg) => (
@@ -231,7 +231,7 @@ async function ExerciseContent({ params }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
               Movement
             </p>
             <p className="text-sm font-medium capitalize mt-0.5">
@@ -241,7 +241,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
               Optimal Reps
             </p>
             <p className="text-sm font-medium tabular-nums mt-0.5">
@@ -252,7 +252,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
               Rest Time
             </p>
             <p className="text-sm font-medium tabular-nums mt-0.5">
@@ -266,7 +266,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
               Equipment
             </p>
             <p className="text-sm font-medium capitalize mt-0.5">
@@ -281,7 +281,7 @@ async function ExerciseContent({ params }: Props) {
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
                 Stimulus-to-Fatigue Ratio
               </p>
               <p className="text-sm font-medium capitalize mt-0.5">

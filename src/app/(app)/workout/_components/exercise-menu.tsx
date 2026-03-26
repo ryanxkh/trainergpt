@@ -143,15 +143,13 @@ export function ExerciseMenu({
           <MoreVertical className="h-4 w-4" />
         </button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="pb-10">
+      <SheetContent side="bottom">
         {view === "menu" ? (
           <>
             <SheetHeader>
-              <SheetTitle className="text-base font-semibold">
-                {exerciseName}
-              </SheetTitle>
+              <SheetTitle>{exerciseName}</SheetTitle>
             </SheetHeader>
-            <div className="mt-4 space-y-1">
+            <div className="px-4 space-y-1">
               <MenuAction
                 icon={<Plus className="h-5 w-5 stroke-[1.5]" />}
                 label="Add Set"
@@ -188,7 +186,7 @@ export function ExerciseMenu({
         ) : view === "replace" ? (
           <>
             <SheetHeader>
-              <SheetTitle className="text-base font-semibold flex items-center gap-2">
+              <SheetTitle className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setView("menu")}
@@ -199,7 +197,7 @@ export function ExerciseMenu({
                 Replace {exerciseName}
               </SheetTitle>
             </SheetHeader>
-            <div className="mt-4 max-h-[50vh] overflow-auto space-y-0.5">
+            <div className="px-4 max-h-[50vh] overflow-auto space-y-0.5">
               {loadingAlternatives ? (
                 <div className="flex items-center justify-center py-8 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -257,7 +255,7 @@ export function ExerciseMenu({
           /* ── Create Custom Exercise View ── */
           <>
             <SheetHeader>
-              <SheetTitle className="text-base font-semibold flex items-center gap-2">
+              <SheetTitle className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setView("replace")}
@@ -268,7 +266,7 @@ export function ExerciseMenu({
                 Create & Replace
               </SheetTitle>
             </SheetHeader>
-            <div className="mt-4 space-y-4 max-h-[50vh] overflow-auto">
+            <div className="px-4 space-y-4 max-h-[50vh] overflow-auto pb-2">
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}

@@ -176,32 +176,30 @@ export default function PrescribedWorkout({
   return (
     <div className="space-y-3">
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            {mesocycleContext && (
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                {mesocycleContext.name} &mdash; Week{" "}
-                {mesocycleContext.currentWeek}
-                {mesocycleContext.totalWeeks
-                  ? ` / ${mesocycleContext.totalWeeks}`
-                  : ""}
-              </p>
+      <div className="space-y-2">
+        {mesocycleContext && (
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {mesocycleContext.name} &mdash; Week{" "}
+            {mesocycleContext.currentWeek}
+            {mesocycleContext.totalWeeks
+              ? ` / ${mesocycleContext.totalWeeks}`
+              : ""}
+          </p>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-lg font-bold tracking-tight leading-tight truncate">
+              {sessionName}
+            </h1>
+            {isDeload && (
+              <Badge variant="outline" className="shrink-0 text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+                <Zap className="mr-1 h-3 w-3" />
+                Deload
+              </Badge>
             )}
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight leading-tight">
-                {sessionName}
-              </h1>
-              {isDeload && (
-                <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700">
-                  <Zap className="mr-1 h-3 w-3" />
-                  Deload
-                </Badge>
-              )}
-            </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0 pt-0.5">
-            <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2.5 py-1">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
               <Timer className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-sm font-mono font-medium tabular-nums">
                 {elapsed}
@@ -401,28 +399,9 @@ function ExerciseCard({
       )}
     >
       {/* Card header */}
-      <div className="flex items-start justify-between gap-2 px-4 pt-3 pb-2">
-        <div className="min-w-0 space-y-1.5">
-          {/* Muscle group badges */}
-          {primaryMuscles.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {primaryMuscles.map((mg) => (
-                <MuscleGroupBadge key={mg} group={mg} />
-              ))}
-            </div>
-          )}
-          <div>
-            <h3 className="font-semibold text-[15px] leading-tight">
-              {exercise.exerciseName}
-            </h3>
-            {equipment && (
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 mt-0.5 font-medium">
-                {equipment}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
+      <div className="px-4 pt-3 pb-2 space-y-1.5">
+        {/* Top row: set counter + action buttons */}
+        <div className="flex items-center justify-between">
           <span
             className={cn(
               "text-xs font-semibold tabular-nums px-2.5 py-1 rounded-full transition-colors",
@@ -438,40 +417,58 @@ function ExerciseCard({
             ) : null}
             {completedCount}/{totalSets}
           </span>
-          {/* Notes toggle button */}
-          <button
-            type="button"
-            onClick={() => setShowNotes((prev) => !prev)}
-            className={cn(
-              "h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors active:scale-95 relative",
-              showNotes
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => setShowNotes((prev) => !prev)}
+              className={cn(
+                "h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors active:scale-95 relative",
+                showNotes
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              <StickyNote className="h-4 w-4" />
+              {notes.trim() && !showNotes && (
+                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+              )}
+            </button>
+            {detail && (
+              <ExerciseInfoSheet
+                exerciseName={exercise.exerciseName}
+                detail={detail}
+              />
             )}
-          >
-            <StickyNote className="h-4 w-4" />
-            {notes.trim() && !showNotes && (
-              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-            )}
-          </button>
-          {/* Exercise info sheet */}
-          {detail && (
-            <ExerciseInfoSheet
+            <ExerciseMenu
               exerciseName={exercise.exerciseName}
-              detail={detail}
+              exerciseId={exercise.exerciseId}
+              sessionId={sessionId}
+              isComplete={isComplete}
+              excludeExerciseIds={excludeExerciseIds}
+              onAddSet={onAddSet}
+              onSkipRemaining={onSkipRemaining}
+              onToggleNotes={() => setShowNotes((prev) => !prev)}
+              onReplace={onReplace}
             />
+          </div>
+        </div>
+        {/* Exercise name + metadata — full width, never truncated by buttons */}
+        <div className="space-y-0.5">
+          {primaryMuscles.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {primaryMuscles.map((mg) => (
+                <MuscleGroupBadge key={mg} group={mg} />
+              ))}
+            </div>
           )}
-          <ExerciseMenu
-            exerciseName={exercise.exerciseName}
-            exerciseId={exercise.exerciseId}
-            sessionId={sessionId}
-            isComplete={isComplete}
-            excludeExerciseIds={excludeExerciseIds}
-            onAddSet={onAddSet}
-            onSkipRemaining={onSkipRemaining}
-            onToggleNotes={() => setShowNotes((prev) => !prev)}
-            onReplace={onReplace}
-          />
+          <h3 className="font-semibold text-base leading-tight">
+            {exercise.exerciseName}
+          </h3>
+          {equipment && (
+            <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">
+              {equipment.replace(/_/g, " ")}
+            </p>
+          )}
         </div>
       </div>
 

@@ -42,9 +42,9 @@ export default function CoachClient() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] flex-col">
+    <div className="flex h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-4rem)] flex-col">
       {/* Messages */}
-      <div className="flex-1 space-y-4 overflow-auto pb-4 min-h-0">
+      <div className="flex-1 space-y-3 overflow-auto pb-4 min-h-0 -mx-4 px-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-end h-full space-y-4 pb-6">
             <div className="text-center space-y-2">
@@ -80,7 +80,7 @@ export default function CoachClient() {
               </Avatar>
             )}
             <div
-              className={`max-w-[75%] rounded-lg px-4 py-2 text-sm ${
+              className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted"
@@ -172,8 +172,8 @@ export default function CoachClient() {
         </div>
       )}
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-3 md:pt-4">
+      {/* Input — iMessage-style */}
+      <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-2 pb-1 md:pt-3">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -187,7 +187,7 @@ export default function CoachClient() {
           disabled={isLoading}
           aria-label="Message your coach"
           rows={1}
-          className="flex-1 min-h-11 max-h-32 py-2.5 resize-none"
+          className="flex-1 min-h-[44px] max-h-28 py-2.5 px-3.5 resize-none rounded-2xl text-base md:text-sm"
         />
         {isLoading ? (
           <Button
@@ -195,7 +195,7 @@ export default function CoachClient() {
             size="icon"
             variant="outline"
             onClick={() => stop()}
-            className="h-11 w-11 shrink-0"
+            className="h-11 w-11 shrink-0 rounded-full"
           >
             <Square className="h-4 w-4" />
           </Button>
@@ -204,7 +204,7 @@ export default function CoachClient() {
             type="submit"
             disabled={!input.trim()}
             size="icon"
-            className="h-11 w-11 shrink-0"
+            className="h-11 w-11 shrink-0 rounded-full"
           >
             <Send className="h-4 w-4" />
           </Button>

@@ -245,7 +245,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
               min={0}
               value={trainingAge}
               onChange={(e) => setTrainingAge(e.target.value)}
-              className="w-24"
+              className="w-28"
             />
           </div>
         </div>
@@ -335,8 +335,8 @@ export function SettingsClient({ data }: { data: SettingsData }) {
 
         <div className="rounded-lg border">
           {/* Header */}
-          <div className="grid grid-cols-4 gap-2 border-b bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
-            <div>Muscle Group</div>
+          <div className="grid grid-cols-4 gap-1 sm:gap-2 border-b bg-muted/50 px-2 sm:px-3 py-2 text-xs font-medium text-muted-foreground">
+            <div>Muscle</div>
             <div className="text-center">MEV</div>
             <div className="text-center">MAV</div>
             <div className="text-center">MRV</div>
@@ -348,7 +348,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
             return (
               <div
                 key={l.muscleGroup}
-                className="grid grid-cols-4 items-center gap-2 border-b last:border-0 px-3 py-2 text-sm cursor-pointer hover:bg-muted/30 transition-colors"
+                className="grid grid-cols-4 items-center gap-1 sm:gap-2 border-b last:border-0 px-2 sm:px-3 py-2.5 text-sm cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() =>
                   !isEditing && setEditingLandmark(l.muscleGroup)
                 }
@@ -369,7 +369,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className="h-7 text-center text-xs"
+                      className="h-9 text-center text-sm"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <Input
@@ -383,7 +383,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className="h-7 text-center text-xs"
+                      className="h-9 text-center text-sm"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <Input
@@ -397,7 +397,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className="h-7 text-center text-xs"
+                      className="h-9 text-center text-sm"
                       onClick={(e) => e.stopPropagation()}
                     />
                   </>

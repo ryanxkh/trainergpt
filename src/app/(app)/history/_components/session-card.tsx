@@ -90,12 +90,12 @@ export function HistorySessionCard({ session }: { session: SessionData }) {
                 </div>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {session.exerciseNames.slice(0, 5).map((name) => (
-                    <Badge key={name} variant="outline" className="text-[11px] font-medium">
+                    <Badge key={name} variant="outline" className="text-xs font-medium">
                       {name}
                     </Badge>
                   ))}
                   {session.exerciseNames.length > 5 && (
-                    <Badge variant="outline" className="text-[11px] font-medium">
+                    <Badge variant="outline" className="text-xs font-medium">
                       +{session.exerciseNames.length - 5}
                     </Badge>
                   )}
@@ -107,7 +107,7 @@ export function HistorySessionCard({ session }: { session: SessionData }) {
                   size="icon"
                   onClick={handleDelete}
                   title="Delete workout"
-                  className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

@@ -348,8 +348,8 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         })}
       </div>
 
-      {/* Grid legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+      {/* Grid legend (desktop only) */}
+      <div className="hidden md:flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="h-2.5 w-2.5 rounded-sm bg-green-100 dark:bg-green-900/40 ring-1 ring-green-200 dark:ring-green-800" />
           Completed
@@ -368,14 +368,16 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         </span>
       </div>
 
-      {/* Program Grid — full mesocycle overview */}
-      <ProgramGrid
-        weeks={weeks}
-        dayNumbers={dayNumbers}
-        cells={cells}
-        selectedWeek={selectedWeek}
-        onWeekSelect={setSelectedWeek}
-      />
+      {/* Program Grid — full mesocycle overview (desktop only, table doesn't work on mobile) */}
+      <div className="hidden md:block">
+        <ProgramGrid
+          weeks={weeks}
+          dayNumbers={dayNumbers}
+          cells={cells}
+          selectedWeek={selectedWeek}
+          onWeekSelect={setSelectedWeek}
+        />
+      </div>
 
       {/* Week Detail — all sessions with full exercise lists */}
       {weekCells.length > 0 && (

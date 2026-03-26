@@ -128,7 +128,82 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
   }
+}
+
+/* ─── Mobile-First Dialog → Bottom Sheet ──────────────────────────────
+   On mobile (<768px), Dialog renders as a bottom sheet.
+   On desktop (768px+), Dialog stays as a centered modal.
+   No code changes needed to any consuming component. */
+
+@media (max-width: 767px) {
+  [data-slot="dialog-content"] {
+    inset: auto 0 0 0 !important;
+    transform: none !important;
+    max-width: 100% !important;
+    max-height: 85dvh;
+    border-radius: 1rem 1rem 0 0;
+    border-top: 1px solid var(--border);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  [data-slot="dialog-content"][data-state="open"] {
+    animation: sheetSlideIn 300ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+
+  [data-slot="dialog-content"][data-state="closed"] {
+    animation: sheetSlideOut 200ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+
+  /* Move close button below safe area on notched devices */
+  [data-slot="dialog-close"] {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  /* Stack footer buttons on mobile */
+  [data-slot="dialog-footer"] {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+}
+
+@keyframes sheetSlideIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sheetSlideOut {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+/* ─── Sheet Safe Area Handling ────────────────────────────────────────
+   Bottom sheets need safe area padding for home indicator on iOS */
+
+[data-slot="sheet-content"] {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ─── Global Mobile Touch Improvements ────────────────────────────── */
+
+/* Prevent text selection on interactive elements during touch */
+button, [role="button"], [role="tab"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth scrolling for all scroll containers */
+.overflow-y-auto, .overflow-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes message-in {

@@ -128,7 +128,7 @@ export function CreateExerciseSheet() {
 
           {/* Primary Muscles */}
           <div className="space-y-2">
-            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Primary Muscles</Label>
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Primary Muscles</Label>
             <p className="text-xs text-muted-foreground -mt-1">
               At least one required.
             </p>
@@ -152,7 +152,7 @@ export function CreateExerciseSheet() {
 
           {/* Secondary Muscles */}
           <div className="space-y-2">
-            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Secondary Muscles</Label>
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Secondary Muscles</Label>
             <p className="text-xs text-muted-foreground -mt-1">Optional.</p>
             <div className="flex flex-wrap gap-1.5">
               {MUSCLE_GROUPS.filter((mg) => !primaryMuscles.includes(mg)).map(
@@ -176,7 +176,7 @@ export function CreateExerciseSheet() {
 
           {/* Movement Pattern */}
           <div className="space-y-2">
-            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Movement Pattern</Label>
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Movement Pattern</Label>
             <div className="flex flex-wrap gap-1.5">
               {MOVEMENT_PATTERNS.map((mp) => (
                 <button
@@ -197,7 +197,7 @@ export function CreateExerciseSheet() {
 
           {/* Equipment */}
           <div className="space-y-2">
-            <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Equipment</Label>
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Equipment</Label>
             <div className="flex flex-wrap gap-1.5">
               {EQUIPMENT_OPTIONS.map((eq) => (
                 <button

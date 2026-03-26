@@ -195,13 +195,14 @@ async function ExerciseProgression() {
                     </span>
                   </div>
                 </div>
+                <div className="overflow-x-auto -mx-2">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">Date</TableHead>
-                      <TableHead className="text-xs">Top Set</TableHead>
-                      <TableHead className="text-xs">Avg W x R</TableHead>
-                      <TableHead className="text-xs">Sets</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">Date</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">Top Set</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">Avg W x R</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">Sets</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -221,6 +222,7 @@ async function ExerciseProgression() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </div>
             );
           })}

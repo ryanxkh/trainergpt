@@ -47,13 +47,11 @@ export function ExerciseInfoSheet({
           <Info className="h-4 w-4" />
         </button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="pb-10">
+      <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle className="text-base font-semibold">
-            {exerciseName}
-          </SheetTitle>
+          <SheetTitle>{exerciseName}</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 space-y-4">
+        <div className="px-4 space-y-4 pb-2">
           {/* Muscle groups */}
           <div className="space-y-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">

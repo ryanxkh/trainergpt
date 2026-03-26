@@ -4,13 +4,14 @@ import { useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { logSet, updateSet } from "../actions";
 import type { PrescribedExercise, LoggedSet, PreviousSetData, SetType } from "./types";
 
 /* ================================================================
    Completed Set Row — checkmark + logged values + set type badge
+   Tap to edit inline.
    ================================================================ */
 
 export function CompletedSetRow({
@@ -70,9 +71,9 @@ export function CompletedSetRow({
 
   if (editing) {
     return (
-      <div className="py-2.5 border-l-2 border-amber-500 pl-3 -ml-0.5 space-y-2 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] rounded-r-md">
+      <div className="py-3 border-l-2 border-amber-500 pl-3 -ml-0.5 space-y-2.5 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] rounded-r-md">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums">
+          <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums shrink-0">
             {setNumber}
           </span>
           <Input
@@ -80,15 +81,15 @@ export function CompletedSetRow({
             inputMode="decimal"
             value={editWeight}
             onChange={(e) => setEditWeight(e.target.value)}
-            className="h-9 w-20 text-center font-medium tabular-nums text-sm"
+            className="h-11 flex-1 min-w-0 text-center font-semibold tabular-nums"
           />
-          <span className="text-muted-foreground text-xs">&times;</span>
+          <span className="text-muted-foreground text-sm shrink-0">&times;</span>
           <Input
             type="number"
             inputMode="numeric"
             value={editReps}
             onChange={(e) => setEditReps(e.target.value)}
-            className="h-9 w-16 text-center font-medium tabular-nums text-sm"
+            className="h-11 flex-[0.6] min-w-0 text-center font-semibold tabular-nums"
           />
           <Input
             type="number"
@@ -96,16 +97,28 @@ export function CompletedSetRow({
             placeholder="RIR"
             value={editRir}
             onChange={(e) => setEditRir(e.target.value)}
-            className="h-9 w-14 text-center font-medium tabular-nums text-sm"
+            className="h-11 flex-[0.5] min-w-0 text-center font-semibold tabular-nums"
           />
-          <div className="flex gap-1 ml-auto">
-            <Button size="sm" variant="ghost" onClick={handleCancel} disabled={isPending} className="h-9 px-2 text-xs">
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={isPending} className="h-9 px-3 text-xs">
-              {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-            </Button>
-          </div>
+        </div>
+        <div className="flex gap-2 pl-7">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCancel}
+            disabled={isPending}
+            className="flex-1"
+          >
+            <X className="mr-1 h-3 w-3" />
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={isPending}
+            className="flex-1"
+          >
+            {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+          </Button>
         </div>
       </div>
     );
@@ -115,9 +128,9 @@ export function CompletedSetRow({
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="flex items-center gap-2 min-h-11 py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md w-full text-left active:bg-green-500/[0.08] transition-colors"
+      className="flex items-center gap-2 min-h-[44px] py-2.5 border-l-2 border-green-500 pl-3 -ml-0.5 bg-green-500/[0.03] dark:bg-green-500/[0.04] rounded-r-md w-full text-left active:bg-green-500/[0.08] transition-colors"
     >
-      <span className="text-xs font-medium text-muted-foreground w-6 tabular-nums shrink-0">
+      <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums shrink-0">
         {setNumber}
       </span>
       <span className="text-sm font-semibold tabular-nums">
@@ -145,7 +158,9 @@ export function CompletedSetRow({
 }
 
 /* ================================================================
-   Active Set Row — input fields, set type toggle, weight carry-forward
+   Active Set Row — mobile-first input layout
+   Inputs use flex instead of hardcoded widths so they adapt to
+   any screen width from 280px to 430px+.
    ================================================================ */
 
 export function ActiveSetRow({
@@ -215,9 +230,9 @@ export function ActiveSetRow({
 
   return (
     <div className="py-3 border-l-2 border-primary pl-3 -ml-0.5 space-y-2.5 bg-primary/[0.03] dark:bg-primary/[0.06] rounded-r-md">
-      {/* Row 1: Set#, Weight, ×, Reps, Log */}
+      {/* Row 1: Set#, Weight, ×, Reps */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-foreground w-6 tabular-nums shrink-0">
+        <span className="text-xs font-bold text-foreground w-5 tabular-nums shrink-0">
           {setNumber}
         </span>
         <Input
@@ -226,19 +241,43 @@ export function ActiveSetRow({
           placeholder="lbs"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          className="h-11 w-[72px] text-center font-semibold tabular-nums text-base"
+          className="h-12 flex-1 min-w-0 text-center font-semibold tabular-nums text-lg"
         />
-        <span className="text-muted-foreground text-sm">&times;</span>
+        <span className="text-muted-foreground text-sm shrink-0">&times;</span>
         <Input
           type="number"
           inputMode="numeric"
           placeholder={`${target.repRangeMin}-${target.repRangeMax}`}
           value={reps}
           onChange={(e) => setReps(e.target.value)}
-          className="h-11 w-16 text-center font-semibold tabular-nums text-base"
+          className="h-12 flex-[0.7] min-w-0 text-center font-semibold tabular-nums text-lg"
         />
+      </div>
+
+      {/* Row 2: RIR selector — full width, evenly spaced */}
+      <div className="flex items-center gap-1.5 pl-7">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mr-0.5 shrink-0">RIR</span>
+        {[0, 1, 2, 3, 4].map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setRir(v.toString())}
+            className={cn(
+              "h-10 flex-1 rounded-md text-sm font-semibold transition-all active:scale-95",
+              rir === v.toString()
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      {/* Row 3: Log button — full width, prominent */}
+      <div className="pl-7">
         <Button
-          className="h-11 flex-1 min-w-[72px] font-semibold text-base"
+          className="w-full h-12 font-semibold text-base"
           onClick={handleLog}
           disabled={isPending}
         >
@@ -246,32 +285,15 @@ export function ActiveSetRow({
         </Button>
       </div>
 
-      {/* Row 2: RIR buttons + Set type pills */}
-      <div className="flex items-center gap-1.5 pl-8">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mr-1">RIR</span>
-        {[0, 1, 2, 3, 4].map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setRir(v.toString())}
-            className={cn(
-              "h-9 w-9 rounded-md text-sm font-semibold transition-all active:scale-95",
-              rir === v.toString()
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            )}
-          >
-            {v}
-          </button>
-        ))}
-        <span className="w-px h-5 bg-border mx-1.5" />
+      {/* Row 4: Set type pills (collapsed by default for most users) */}
+      <div className="flex items-center gap-1.5 pl-7">
         {(["normal", "myorep", "dropset"] as const).map((type) => (
           <button
             key={type}
             type="button"
             onClick={() => setSetType(type)}
             className={cn(
-              "h-8 px-2.5 rounded-full text-[11px] font-semibold transition-all active:scale-95",
+              "h-8 px-3 rounded-full text-xs font-semibold transition-all active:scale-95",
               setType === type
                 ? type === "myorep"
                   ? "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400"
@@ -286,8 +308,9 @@ export function ActiveSetRow({
         ))}
       </div>
 
+      {/* Previous set reference */}
       {previousSet && (
-        <p className="text-[11px] text-muted-foreground pl-8 font-medium">
+        <p className="text-xs text-muted-foreground pl-7 font-medium">
           <span className="opacity-70">Last:</span> {previousSet.weight} &times; {previousSet.reps}
           {previousSet.rir !== null ? ` @${previousSet.rir}` : ""}
           {previousSet.setType !== "normal" && (
@@ -315,15 +338,15 @@ export function UpcomingSetRow({
   previousSet: PreviousSetData | undefined;
 }) {
   return (
-    <div className="flex items-center gap-2 min-h-11 py-2.5 pl-3 -ml-0.5 border-l-2 border-dashed border-muted-foreground/30 rounded-r-md opacity-60">
-      <span className="text-xs font-medium text-muted-foreground w-6 tabular-nums shrink-0">
+    <div className="flex items-center gap-2 min-h-[44px] py-2.5 pl-3 -ml-0.5 border-l-2 border-dashed border-muted-foreground/30 rounded-r-md opacity-50">
+      <span className="text-xs font-medium text-muted-foreground w-5 tabular-nums shrink-0">
         {setNumber}
       </span>
       <span className="text-xs text-muted-foreground">
         ~{previousSet?.weight ?? "?"} lbs &times; {target.repRangeMin}&ndash;{target.repRangeMax} @{target.rirTarget}
       </span>
       {previousSet && (
-        <span className="text-[10px] text-muted-foreground/60 ml-auto tabular-nums font-medium">
+        <span className="text-[11px] text-muted-foreground/60 ml-auto tabular-nums font-medium">
           Last: {previousSet.weight}&times;{previousSet.reps}
         </span>
       )}

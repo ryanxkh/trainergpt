@@ -169,10 +169,12 @@
     right: 1rem;
   }
 
-  /* Stack footer buttons on mobile */
+  /* Stack footer buttons on mobile, add side safe-area padding */
   [data-slot="dialog-footer"] {
     flex-direction: column-reverse;
     gap: 0.5rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
 
@@ -196,9 +198,11 @@
 /* ─── Global Mobile Touch Improvements ────────────────────────────── */
 
 /* Prevent text selection on interactive elements during touch */
-button, [role="button"], [role="tab"] {
+/* touch-action: manipulation eliminates 300ms tap delay (not inherited in CSS) */
+a, button, [role="button"], [role="tab"], [role="link"], label, select, summary {
   -webkit-user-select: none;
   user-select: none;
+  touch-action: manipulation;
 }
 
 /* Smooth scrolling for all scroll containers */

@@ -20,10 +20,9 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm md:hidden"
-      style={{ touchAction: "manipulation" }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <div className="flex h-16 items-stretch pb-[env(safe-area-inset-bottom)]" role="tablist">
+      <div className="flex h-16 items-stretch" role="tablist">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
           return (

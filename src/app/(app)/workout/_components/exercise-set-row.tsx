@@ -263,7 +263,7 @@ export function ActiveSetRow({
             type="button"
             onClick={() => setRir(v.toString())}
             className={cn(
-              "h-10 flex-1 rounded-md text-sm font-semibold transition-all active:scale-95",
+              "h-11 flex-1 rounded-md text-sm font-semibold transition-all active:scale-95",
               rir === v.toString()
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground"
@@ -293,7 +293,7 @@ export function ActiveSetRow({
             type="button"
             onClick={() => setSetType(type)}
             className={cn(
-              "h-8 px-3 rounded-full text-xs font-semibold transition-all active:scale-95",
+              "h-10 px-3 rounded-full text-xs font-semibold transition-all active:scale-95",
               setType === type
                 ? type === "myorep"
                   ? "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400"

@@ -357,11 +357,11 @@ export async function POST(req: Request) {
         description:
           "Search the exercise library by muscle group, name, or equipment. Returns exercise IDs needed for prescribing workouts. Always call this before prescribeWorkout to get valid exercise IDs.",
         inputSchema: z.object({
-          muscleGroup: z
+          muscleGroups: z
             .string()
             .optional()
             .describe(
-              "Filter by primary muscle group (e.g. chest, back, quads, hamstrings, glutes, biceps, triceps, side_delts, rear_delts, front_delts, calves, abs, traps, forearms)"
+              "Comma-separated muscle groups to search (e.g. 'quads,hamstrings,glutes'). Valid groups: chest, back, quads, hamstrings, glutes, biceps, triceps, side_delts, rear_delts, front_delts, calves, abs, traps, forearms"
             ),
           searchTerm: z
             .string()
@@ -374,15 +374,15 @@ export async function POST(req: Request) {
               "Filter by equipment (barbell, dumbbell, cable, machine, bodyweight)"
             ),
         }),
-        execute: async ({ muscleGroup, searchTerm, equipment }) => {
+        execute: async ({ muscleGroups, searchTerm, equipment }) => {
           const allExercises = await getCachedExercises(userId);
 
           let filtered = allExercises;
 
-          if (muscleGroup) {
-            const group = muscleGroup.toLowerCase();
+          if (muscleGroups) {
+            const groups = muscleGroups.toLowerCase().split(",").map((g) => g.trim());
             filtered = filtered.filter((e) =>
-              e.muscleGroups.primary.includes(group)
+              groups.some((g) => e.muscleGroups.primary.includes(g))
             );
           }
 
@@ -990,7 +990,7 @@ export async function POST(req: Request) {
         },
       }),
     },
-    stopWhen: stepCountIs(7),
+    stopWhen: stepCountIs(10),
   });
 
   return result.toUIMessageStreamResponse();

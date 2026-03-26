@@ -138,7 +138,7 @@ export function ExerciseMenu({
       <SheetTrigger asChild>
         <button
           type="button"
-          className="h-9 w-9 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors active:scale-95"
+          className="h-11 w-11 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors active:scale-95"
         >
           <MoreVertical className="h-4 w-4" />
         </button>

@@ -181,7 +181,17 @@ export const BACK_EXERCISES: MockExercise[] = [
   { id: 13, name: "Pull-Up", muscleGroups: { primary: ["back"], secondary: ["biceps"] }, equipment: "bodyweight", movementPattern: "vertical_pull" },
 ];
 
-export const ALL_EXERCISES: MockExercise[] = [...CHEST_EXERCISES, ...BACK_EXERCISES];
+export const LEG_EXERCISES: MockExercise[] = [
+  { id: 20, name: "Barbell Back Squat", muscleGroups: { primary: ["quads"], secondary: ["glutes"] }, equipment: "barbell", movementPattern: "squat" },
+  { id: 21, name: "Leg Press", muscleGroups: { primary: ["quads"], secondary: ["glutes"] }, equipment: "machine", movementPattern: "squat" },
+  { id: 22, name: "Leg Extension", muscleGroups: { primary: ["quads"], secondary: [] }, equipment: "machine", movementPattern: "isolation" },
+  { id: 23, name: "Romanian Deadlift", muscleGroups: { primary: ["hamstrings"], secondary: ["glutes"] }, equipment: "barbell", movementPattern: "hip_hinge" },
+  { id: 24, name: "Lying Leg Curl", muscleGroups: { primary: ["hamstrings"], secondary: [] }, equipment: "machine", movementPattern: "isolation" },
+  { id: 25, name: "Hip Thrust", muscleGroups: { primary: ["glutes"], secondary: ["hamstrings"] }, equipment: "barbell", movementPattern: "hip_hinge" },
+  { id: 26, name: "Standing Calf Raise", muscleGroups: { primary: ["calves"], secondary: [] }, equipment: "machine", movementPattern: "isolation" },
+];
+
+export const ALL_EXERCISES: MockExercise[] = [...CHEST_EXERCISES, ...BACK_EXERCISES, ...LEG_EXERCISES];
 
 // ─── Deload Recommendations ──────────────────────────────────────
 

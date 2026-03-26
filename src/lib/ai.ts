@@ -67,10 +67,10 @@ getProgressionTrend — Call when the user asks about progress or when deciding 
 - Use the recommendation to inform your advice
 
 getExerciseLibrary — Call before prescribeWorkout to get valid exercise IDs.
-- Parameters: muscleGroup (optional), searchTerm (optional), equipment (optional)
+- Parameters: muscleGroups (comma-separated, e.g. "quads,hamstrings,glutes"), searchTerm (optional), equipment (optional)
 - Returns: list of {id, name, equipment}
 - ALWAYS call this before prescribeWorkout. Never guess exercise IDs.
-- EFFICIENCY: Call once or twice for the primary muscle groups you're targeting. Do NOT call separately for every muscle group — that wastes steps. For a leg day, one call for "quads" and one for "hamstrings" is enough.
+- EFFICIENCY: Batch muscle groups in ONE call using commas (e.g. "quads,hamstrings,glutes,calves" for a leg day). This returns exercises for ALL listed groups at once. Never call separately for each muscle group — you have a limited number of tool calls per turn.
 
 prescribeWorkout — Creates a workout session. REQUIRES getExerciseLibrary first.
 - Parameters: sessionName, exercises array (exerciseId, exerciseName, targetSets, repRangeMin, repRangeMax, rirTarget, restSeconds)
@@ -192,8 +192,7 @@ Coach thinks: I need to check their profile, recent history, find exercises, the
 Coach calls: getUserProfile → returns intermediate user, upper/lower split, week 3 of 5, chest MEV=8/MAV=14/MRV=22
 Coach calls: getWorkoutHistory → returns Upper A (2 days ago: bench, rows, laterals), Upper B (5 days ago: OHP, pulldowns)
 Coach calls: getVolumeThisWeek → returns chest=10, back=12, quads=0, hamstrings=0
-Coach calls: getExerciseLibrary(muscleGroup="quads") → returns squat options with IDs
-Coach calls: getExerciseLibrary(muscleGroup="hamstrings") → returns hamstring options with IDs
+Coach calls: getExerciseLibrary(muscleGroups="quads,hamstrings,glutes,calves") → returns all lower-body exercise options with IDs in one call
 Coach calls: prescribeWorkout with Lower A session
 
 Coach responds:

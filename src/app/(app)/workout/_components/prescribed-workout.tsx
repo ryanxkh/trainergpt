@@ -386,6 +386,9 @@ function ExerciseCard({
   onReplace: (newId: number, newName: string) => void;
 }) {
   const [showNotes, setShowNotes] = useState(false);
+  const notesRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) node.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, []);
   const completedCount = loggedSets.length;
   const primaryMuscles = detail?.muscleGroups.primary ?? [];
   const equipment = detail?.equipment ?? "";
@@ -422,7 +425,7 @@ function ExerciseCard({
               type="button"
               onClick={() => setShowNotes((prev) => !prev)}
               className={cn(
-                "h-9 w-9 inline-flex items-center justify-center rounded-md transition-colors active:scale-95 relative",
+                "h-11 w-11 inline-flex items-center justify-center rounded-md transition-colors active:scale-95 relative",
                 showNotes
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -534,7 +537,7 @@ function ExerciseCard({
 
       {/* Exercise notes */}
       {showNotes && (
-        <div className="px-4 pb-3 border-t border-dashed">
+        <div ref={notesRef} className="px-4 pb-3 border-t border-dashed">
           <Textarea
             placeholder="Notes for this exercise..."
             value={notes}

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Program",
   description: "View your mesocycle program and weekly sessions.",
 };
-import { getActiveProgramData } from "./actions";
+import { getActiveMesocycleId } from "./actions";
 import { getTemplatesForBrowse } from "./template-actions";
 import { GenerateMesocycleForm } from "./_components/generate-form";
 import { Button } from "@/components/ui/button";
@@ -94,10 +94,10 @@ async function EmptyState() {
 }
 
 async function ProgramRedirect() {
-  const program = await getActiveProgramData();
+  const mesoId = await getActiveMesocycleId();
 
-  if (program) {
-    redirect(`/program/${program.mesocycle.id}`);
+  if (mesoId) {
+    redirect(`/program/${mesoId}`);
   }
 
   return <EmptyState />;

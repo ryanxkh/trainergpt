@@ -168,16 +168,16 @@ function createMockTools(fixtures: EvalFixtures, toolCallLog: { toolName: string
       description:
         "Search the exercise library by muscle group, name, or equipment. Returns exercise IDs needed for prescribing workouts. Always call this before prescribeWorkout.",
       inputSchema: z.object({
-        muscleGroup: z.string().optional().describe("Filter by primary muscle group"),
+        muscleGroups: z.string().optional().describe("Comma-separated muscle groups to filter by"),
         searchTerm: z.string().optional().describe("Search by exercise name"),
         equipment: z.string().optional().describe("Filter by equipment"),
       }),
       execute: async (args) => {
         toolCallLog.push({ toolName: "getExerciseLibrary", args });
         let filtered = fixtures.exercises;
-        if (args.muscleGroup) {
-          const g = args.muscleGroup.toLowerCase();
-          filtered = filtered.filter((e) => e.muscleGroups.primary.includes(g));
+        if (args.muscleGroups) {
+          const groups = args.muscleGroups.toLowerCase().split(",").map((g) => g.trim());
+          filtered = filtered.filter((e) => groups.some((g) => e.muscleGroups.primary.includes(g)));
         }
         if (args.searchTerm) {
           const t = args.searchTerm.toLowerCase();
@@ -300,7 +300,7 @@ async function runEval(scenario: CoachEval): Promise<EvalResult> {
         content: text,
       })),
       tools: createMockTools(scenario.fixtures, toolCallLog),
-      stopWhen: stepCountIs(7),
+      stopWhen: stepCountIs(10),
     });
 
     const fullResponse = result.text;

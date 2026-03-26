@@ -44,6 +44,15 @@ export type ProgramData = {
 
 // ─── Get Active Program ───────────────────────────────────────────────
 
+export async function getActiveMesocycleId(): Promise<number | null> {
+  const userId = await requireUserId();
+  const activeMeso = await db.query.mesocycles.findFirst({
+    where: and(eq(mesocycles.userId, userId), eq(mesocycles.status, "active")),
+    columns: { id: true },
+  });
+  return activeMeso?.id ?? null;
+}
+
 export async function getActiveProgramData(): Promise<ProgramData | null> {
   const userId = await requireUserId();
 

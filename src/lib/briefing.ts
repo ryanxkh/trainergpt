@@ -6,7 +6,10 @@ import {
   getCachedProfile,
   getDeloadRecommendation,
 } from "./cache";
+import { redis } from "./redis";
 import type { ProfileData, VolumeData, DeloadRecommendation } from "./cache";
+
+const BRIEFING_CACHE_TTL = 600; // 10 minutes — briefing doesn't need to be real-time
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -50,6 +53,13 @@ export async function generateSessionBriefing(
   userId: number
 ): Promise<{ briefing: SessionBriefing; xml: string } | null> {
   try {
+    // Check briefing cache first (avoids 10-15 DB queries per chat message)
+    const cacheKey = `cache:briefing:${userId}`;
+    try {
+      const cached = await redis.get<{ briefing: SessionBriefing; xml: string }>(cacheKey);
+      if (cached) return cached;
+    } catch { /* Redis unavailable */ }
+
     // Gather data in parallel — all cached or lightweight queries
     const [profile, volume, deload, recentSessions] = await Promise.all([
       getCachedProfile(userId),
@@ -102,7 +112,10 @@ export async function generateSessionBriefing(
 
     const xml = formatBriefingXml(briefing);
 
-    return { briefing, xml };
+    const result = { briefing, xml };
+    try { await redis.set(cacheKey, result, { ex: BRIEFING_CACHE_TTL }); } catch { /* Redis write failed */ }
+
+    return result;
   } catch (error) {
     // Briefing is non-critical — if anything fails, return null and let the coach
     // work without it rather than breaking the chat endpoint

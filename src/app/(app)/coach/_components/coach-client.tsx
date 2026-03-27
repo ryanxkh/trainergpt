@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Dumbbell, User, Send, Check, ArrowRight, AlertCircle, RotateCcw, Square } from "lucide-react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import dynamic from "next/dynamic";
+
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
 const QUICK_PROMPTS = [
   "What should I train today?",

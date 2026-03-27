@@ -6,12 +6,8 @@ export const metadata: Metadata = {
   title: "History",
   description: "View your workout history and progression.",
 };
-import {
-  workoutSessions,
-  exerciseSets,
-  exercises,
-} from "@/lib/db/schema";
-import { eq, desc, and, asc } from "drizzle-orm";
+import { workoutSessions } from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,21 +29,27 @@ async function getUserId() {
   return session?.user?.id ? parseInt(session.user.id as string) : 1;
 }
 
-// ─── Session History List ──────────────────────────────────────────
-
-async function SessionHistory() {
-  const userId = await getUserId();
-
-  const sessions = await db.query.workoutSessions.findMany({
+// Single shared query — avoids 3 separate DB hits for the same data
+async function getAllSessions(userId: number) {
+  return db.query.workoutSessions.findMany({
     where: eq(workoutSessions.userId, userId),
     orderBy: [desc(workoutSessions.date)],
-    limit: 20,
+    limit: 30,
     with: {
       sets: {
         with: { exercise: true },
       },
     },
   });
+}
+
+type SessionWithSets = Awaited<ReturnType<typeof getAllSessions>>[number];
+
+// ─── Session History List ──────────────────────────────────────────
+
+function SessionHistoryContent({ sessions }: { sessions: SessionWithSets[] }) {
+  // Use the 20 most recent for the list
+  const recentSessions = sessions.slice(0, 20);
 
   if (sessions.length === 0) {
     return (
@@ -64,7 +66,7 @@ async function SessionHistory() {
 
   return (
     <div className="space-y-3">
-      {sessions.map((session) => {
+      {recentSessions.map((session) => {
         const exerciseNames = [
           ...new Set(session.sets.map((s) => s.exercise.name)),
         ];
@@ -95,21 +97,11 @@ async function SessionHistory() {
 
 // ─── Exercise Progression ──────────────────────────────────────────
 
-async function ExerciseProgression() {
-  const userId = await getUserId();
+function ExerciseProgressionContent({ sessions }: { sessions: SessionWithSets[] }) {
+  // Sort ascending for progression analysis
+  const sorted = [...sessions].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  // Get all completed sessions with sets
-  const sessions = await db.query.workoutSessions.findMany({
-    where: eq(workoutSessions.userId, userId),
-    orderBy: [asc(workoutSessions.date)],
-    with: {
-      sets: {
-        with: { exercise: true },
-      },
-    },
-  });
-
-  if (sessions.length === 0) return null;
+  if (sorted.length === 0) return null;
 
   // Build per-exercise progression: { exerciseName: [{ date, avgWeight, avgReps, sets }] }
   const progressionMap: Record<
@@ -124,7 +116,7 @@ async function ExerciseProgression() {
     }[]
   > = {};
 
-  for (const session of sessions) {
+  for (const session of sorted) {
     // Group sets by exercise within this session
     const byExercise: Record<string, typeof session.sets> = {};
     for (const set of session.sets) {
@@ -234,21 +226,11 @@ async function ExerciseProgression() {
 
 // ─── Volume Over Time ──────────────────────────────────────────────
 
-async function VolumeOverTime() {
-  const userId = await getUserId();
+function VolumeOverTimeContent({ sessions }: { sessions: SessionWithSets[] }) {
+  // Sort ascending for chart
+  const sorted = [...sessions].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const sessions = await db.query.workoutSessions.findMany({
-    where: eq(workoutSessions.userId, userId),
-    orderBy: [asc(workoutSessions.date)],
-    limit: 30,
-    with: {
-      sets: {
-        with: { exercise: true },
-      },
-    },
-  });
-
-  if (sessions.length < 2) return null;
+  if (sorted.length < 2) return null;
 
   // Build chart data: { weekLabel, muscleGroup -> setCount }
   // Aggregate by week
@@ -257,7 +239,7 @@ async function VolumeOverTime() {
     Record<string, string | number>
   > = {};
 
-  for (const session of sessions) {
+  for (const session of sorted) {
     // Get Monday of this session's week
     const d = new Date(session.date);
     const day = d.getDay();
@@ -338,18 +320,18 @@ function ListSkeleton() {
   );
 }
 
-// ─── Charts Section ───────────────────────────────────────────────
+// ─── Single data-fetching component — 1 query instead of 3 ──────────
 
-function ChartsSection() {
+async function HistoryContent() {
+  const userId = await getUserId();
+  const sessions = await getAllSessions(userId);
+
   return (
     <>
-      <Suspense fallback={<ChartSkeleton />}>
-        <VolumeOverTime />
-      </Suspense>
-
-      <Suspense fallback={<ChartSkeleton />}>
-        <ExerciseProgression />
-      </Suspense>
+      <VolumeOverTimeContent sessions={sessions} />
+      <ExerciseProgressionContent sessions={sessions} />
+      <h2 className="text-xl font-semibold">All Workouts</h2>
+      <SessionHistoryContent sessions={sessions} />
     </>
   );
 }
@@ -361,13 +343,8 @@ export default function HistoryPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">History</h1>
 
-      <Suspense fallback={null}>
-        <ChartsSection />
-      </Suspense>
-
-      <h2 className="text-xl font-semibold">All Workouts</h2>
       <Suspense fallback={<ListSkeleton />}>
-        <SessionHistory />
+        <HistoryContent />
       </Suspense>
     </div>
   );

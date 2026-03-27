@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Exercises",
   description: "Browse the exercise library by muscle group.",
 };
+import { db } from "@/lib/db";
 import { exercises } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

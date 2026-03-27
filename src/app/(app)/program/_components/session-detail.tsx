@@ -3,8 +3,9 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusDot } from "@/components/ui/status-dot";
 import { MuscleGroupBadge } from "@/app/(app)/workout/_components/muscle-group-badge";
-import { Play, ArrowRight, Check, Clock } from "lucide-react";
+import { Play, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -76,7 +77,7 @@ function SessionCard({ session }: { session: GridCell }) {
   const totalSets = session.exercises.reduce((sum, ex) => sum + ex.sets, 0);
 
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
+    <div className="rounded-xl border bg-card overflow-hidden">
       {/* Session header */}
       <div className="px-4 py-3 border-b bg-muted/30 space-y-2">
         <div className="flex items-center justify-between gap-2">
@@ -87,7 +88,12 @@ function SessionCard({ session }: { session: GridCell }) {
             <span className="text-sm font-semibold truncate">
               {session.sessionName}
             </span>
-            <StatusBadge status={session.status} />
+            {session.status !== "planned" && session.status !== "future" && (
+              <StatusDot
+                state={session.status as "active" | "completed" | "abandoned"}
+                label={session.status === "abandoned" ? "skipped" : session.status}
+              />
+            )}
           </div>
           <span className="text-xs text-muted-foreground tabular-nums shrink-0">
             {session.exercises.length} ex · {totalSets} sets
@@ -142,35 +148,3 @@ function SessionCard({ session }: { session: GridCell }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  switch (status) {
-    case "completed":
-      return (
-        <Badge
-          variant="secondary"
-          className="gap-0.5 text-green-700 dark:text-green-400 text-[10px] px-1.5"
-        >
-          <Check className="h-2.5 w-2.5" />
-          Done
-        </Badge>
-      );
-    case "active":
-      return (
-        <Badge className="gap-0.5 text-[10px] px-1.5">
-          <Clock className="h-2.5 w-2.5" />
-          Active
-        </Badge>
-      );
-    case "abandoned":
-      return (
-        <Badge
-          variant="secondary"
-          className="text-muted-foreground text-[10px] px-1.5"
-        >
-          Skipped
-        </Badge>
-      );
-    default:
-      return null;
-  }
-}

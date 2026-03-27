@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { StatusDot } from "@/components/ui/status-dot";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -158,7 +159,7 @@ function StaleSessionBanner({
   );
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 mb-4">
+    <div className="flex items-center gap-3 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 mb-4">
       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
       <p className="text-sm text-amber-800 dark:text-amber-300 flex-1">
         This session was started {daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`}. You can continue or discard it.
@@ -235,7 +236,7 @@ function PlannedSessionList({
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {data.mesocycleName} &mdash; Week {data.currentWeek} / {data.totalWeeks}
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">This Week</h1>
@@ -262,7 +263,7 @@ function PlannedSessionList({
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     {dayLabel && (
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {dayLabel}
                       </span>
                     )}
@@ -282,10 +283,10 @@ function PlannedSessionList({
                 </div>
                 <div className="shrink-0">
                   {isDone && (
-                    <Badge variant="secondary" className="text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-950/40">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Done
-                    </Badge>
+                    <StatusDot
+                      state={session.status === "abandoned" ? "abandoned" : "completed"}
+                      label={session.status === "abandoned" ? "skipped" : "done"}
+                    />
                   )}
                   {isStartable && (
                     <Button
@@ -304,7 +305,7 @@ function PlannedSessionList({
                     </Button>
                   )}
                   {session.status === "active" && (
-                    <Badge className="bg-primary/15 text-primary border-primary/30">Active</Badge>
+                    <StatusDot state="active" label="active" />
                   )}
                 </div>
               </CardContent>
@@ -787,7 +788,7 @@ function ActiveWorkout({
                 ([exerciseName, exerciseSetsArr]) => (
                   <div key={exerciseName}>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">{exerciseName}</h3>
+                      <h3 className="text-sm font-semibold">{exerciseName}</h3>
                       <Badge variant="secondary">
                         {exerciseSetsArr.length} sets
                       </Badge>
@@ -982,7 +983,7 @@ export default function WorkoutPage({
         </div>
         {/* Exercise card skeletons */}
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+          <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-2 flex-1">
                 <div className="flex gap-1.5">

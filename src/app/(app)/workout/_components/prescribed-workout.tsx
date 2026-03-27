@@ -208,7 +208,7 @@ export default function PrescribedWorkout({
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="space-y-2">
         {mesocycleContext && (
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {mesocycleContext.name} &mdash; Week{" "}
             {mesocycleContext.currentWeek}
             {mesocycleContext.totalWeeks
@@ -342,7 +342,7 @@ export default function PrescribedWorkout({
       })}
 
       {/* ── Complete Workout ────────────────────────────────── */}
-      <div className="rounded-lg border bg-card p-4 space-y-4">
+      <div className="rounded-xl border bg-card p-4 space-y-4">
         <Textarea
           placeholder="Post-workout notes — pumps, fatigue, joint issues..."
           value={postNotes}
@@ -426,7 +426,7 @@ function ExerciseCard({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card overflow-hidden transition-all duration-300",
+        "rounded-xl border bg-card overflow-hidden transition-all duration-300",
         isComplete && "opacity-60 saturate-50",
         isDeload && !isComplete && "border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/10"
       )}
@@ -498,7 +498,7 @@ function ExerciseCard({
             {exercise.exerciseName}
           </h3>
           {equipment && (
-            <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {equipment.replace(/_/g, " ")}
             </p>
           )}

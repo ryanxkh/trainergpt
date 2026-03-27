@@ -144,12 +144,12 @@ export function CompletedSetRow({
         <span className="text-xs text-muted-foreground font-medium">@{rir}</span>
       )}
       {setType === "myorep" && (
-        <span className="text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40 px-1.5 py-0.5 rounded ml-auto">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40 px-1.5 py-0.5 rounded ml-auto">
           MYO
         </span>
       )}
       {setType === "dropset" && (
-        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded ml-auto">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded ml-auto">
           DROP
         </span>
       )}
@@ -257,7 +257,7 @@ export function ActiveSetRow({
 
       {/* Row 2: RIR selector — full width, evenly spaced */}
       <div className="flex items-center gap-1.5 pl-7">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mr-0.5 shrink-0">RIR</span>
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mr-0.5 shrink-0">RIR</span>
         {[0, 1, 2, 3, 4].map((v) => (
           <button
             key={v}

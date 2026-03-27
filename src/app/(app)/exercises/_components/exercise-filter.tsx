@@ -164,7 +164,7 @@ export function ExerciseFilter({
       <div className="space-y-8">
         {sortedGroups.map((group) => (
           <section key={group}>
-            <h2 className="text-lg font-semibold capitalize mb-3">
+            <h2 className="text-xl font-semibold capitalize mb-3">
               {group.replace(/_/g, " ")}
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -189,7 +189,7 @@ export function ExerciseFilter({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                               {ex.equipment}
                             </p>
                           </div>

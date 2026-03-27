@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Dumbbell, User, Send, Check, ArrowRight, AlertCircle, RotateCcw, Square } from "lucide-react";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -94,7 +95,7 @@ export default function CoachClient() {
               </Avatar>
             )}
             <div
-              className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+              className={`max-w-[85%] md:max-w-[75%] rounded-xl px-4 py-2.5 text-sm ${
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted"
@@ -153,12 +154,8 @@ export default function CoachClient() {
               <Avatar className="flex h-8 w-8 shrink-0 items-center justify-center bg-primary text-primary-foreground">
                 <Dumbbell className="h-4 w-4" />
               </Avatar>
-              <div className="rounded-lg bg-muted px-4 py-2">
-                <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
-                </div>
+              <div className="rounded-xl bg-muted px-4 py-2">
+                <LoadingDots className="text-muted-foreground" />
               </div>
             </div>
           )}
@@ -184,7 +181,7 @@ export default function CoachClient() {
 
       {/* Error banner */}
       {isError && error && (
-        <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-destructive/50 bg-destructive/5 px-4 py-3">
           <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
           <p className="text-sm text-destructive flex-1">
             Something went wrong. {error.message || "Please try again."}
@@ -218,7 +215,7 @@ export default function CoachClient() {
           disabled={isLoading}
           aria-label="Message your coach"
           rows={1}
-          className="flex-1 min-h-[44px] max-h-28 py-2.5 px-3.5 resize-none rounded-2xl text-base md:text-sm"
+          className="flex-1 min-h-[44px] max-h-28 py-2.5 px-3.5 resize-none rounded-xl text-base md:text-sm"
         />
         {isLoading ? (
           <Button

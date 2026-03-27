@@ -75,7 +75,7 @@ function SelectButtons({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-95 ${
+          className={`min-h-11 px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-95 ${
             value === opt.value
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted text-muted-foreground hover:bg-accent"
@@ -207,7 +207,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
 
       {/* Profile Section */}
       <section className="space-y-4">
-        <h2 className="text-lg font-medium">Profile</h2>
+        <h2 className="text-lg font-semibold">Profile</h2>
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
@@ -255,7 +255,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
 
       {/* Training Preferences */}
       <section className="space-y-4">
-        <h2 className="text-lg font-medium">Training Preferences</h2>
+        <h2 className="text-lg font-semibold">Training Preferences</h2>
         <div className="space-y-3">
           <div className="space-y-2">
             <Label>Training Days per Week</Label>
@@ -265,7 +265,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
                   key={d}
                   type="button"
                   onClick={() => setTrainingDays(d)}
-                  className={`min-h-11 w-12 rounded-lg text-sm font-semibold transition-all active:scale-95 ${
+                  className={`min-h-11 w-12 rounded-md text-sm font-semibold transition-all active:scale-95 ${
                     trainingDays === d
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "bg-muted text-muted-foreground hover:bg-accent"
@@ -317,7 +317,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium">Volume Landmarks</h2>
+            <h2 className="text-lg font-semibold">Volume Landmarks</h2>
             <p className="text-sm text-muted-foreground">
               Sets per week by muscle group. Tap a row to edit.
             </p>
@@ -333,7 +333,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
           </Button>
         </div>
 
-        <div className="rounded-lg border">
+        <div className="rounded-xl border">
           {/* Header */}
           <div className="grid grid-cols-4 gap-1 sm:gap-2 border-b bg-muted/50 px-2 sm:px-3 py-2 text-xs font-medium text-muted-foreground">
             <div>Muscle</div>
@@ -444,7 +444,7 @@ export function SettingsClient({ data }: { data: SettingsData }) {
 
       {/* Account */}
       <section className="space-y-4">
-        <h2 className="text-lg font-medium">Account</h2>
+        <h2 className="text-lg font-semibold">Account</h2>
         <form action={handleSignOut}>
           <Button variant="outline" type="submit">
             Sign Out

@@ -62,7 +62,7 @@ export function ProgramGrid({
     );
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="overflow-x-auto rounded-xl border bg-card">
       <table className="w-full border-collapse min-w-max">
         <thead>
           <tr>

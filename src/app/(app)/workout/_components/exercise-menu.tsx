@@ -215,7 +215,7 @@ export function ExerciseMenu({
                     type="button"
                     disabled={replacingId !== null}
                     onClick={() => handleReplace(alt.id)}
-                    className="flex w-full items-start gap-3 rounded-lg px-3 py-3 min-h-11 text-left hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all disabled:opacity-50"
+                    className="flex w-full items-start gap-3 rounded-md px-3 py-3 min-h-11 text-left hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all disabled:opacity-50"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export function ExerciseMenu({
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                         )}
                       </div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mt-0.5 font-medium">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
                         {alt.equipment}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1.5">
@@ -241,7 +241,7 @@ export function ExerciseMenu({
                   <button
                     type="button"
                     onClick={() => setView("create")}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 min-h-11 text-sm font-medium text-muted-foreground hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all"
+                    className="flex w-full items-center gap-3 rounded-md px-3 min-h-11 text-sm font-medium text-muted-foreground hover:bg-accent active:bg-accent/80 active:scale-[0.99] transition-all"
                   >
                     <Plus className="h-4 w-4 stroke-[1.5]" />
                     Create Custom Exercise
@@ -274,7 +274,7 @@ export function ExerciseMenu({
                 autoFocus
               />
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Muscles</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Primary Muscles</p>
                 <div className="flex flex-wrap gap-1.5">
                   {MUSCLE_GROUPS.map((mg) => (
                     <button
@@ -299,7 +299,7 @@ export function ExerciseMenu({
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Equipment</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Equipment</p>
                 <div className="flex flex-wrap gap-1.5">
                   {EQUIPMENT_OPTIONS.map((eq) => (
                     <button
@@ -351,7 +351,7 @@ function MenuAction({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-4 rounded-lg px-4 min-h-[52px] text-sm font-medium hover:bg-accent active:bg-accent/80 active:scale-[0.98] transition-all"
+      className="flex w-full items-center gap-4 rounded-md px-4 min-h-[52px] text-sm font-medium hover:bg-accent active:bg-accent/80 active:scale-[0.98] transition-all"
       onClick={onClick}
     >
       <span className="text-muted-foreground shrink-0">{icon}</span>

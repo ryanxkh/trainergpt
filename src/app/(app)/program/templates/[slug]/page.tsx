@@ -56,7 +56,7 @@ function PreviewSkeleton() {
           <Skeleton key={i} className="h-32 rounded-xl" />
         ))}
       </div>
-      <Skeleton className="h-12 w-full rounded-lg" />
+      <Skeleton className="h-12 w-full rounded-xl" />
     </div>
   );
 }

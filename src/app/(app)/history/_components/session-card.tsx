@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusDot } from "@/components/ui/status-dot";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,9 +67,7 @@ export function HistorySessionCard({ session }: { session: SessionData }) {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold truncate">{session.sessionName}</p>
                   {!isComplete && (
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      In Progress
-                    </Badge>
+                    <StatusDot state="active" label="In Progress" />
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">

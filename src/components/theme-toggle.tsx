@@ -19,7 +19,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+      <div className="flex items-center gap-1 rounded-md bg-muted p-1">
         {options.map(({ value, icon: Icon }) => (
           <button
             key={value}
@@ -33,7 +33,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+    <div className="flex items-center gap-1 rounded-md bg-muted p-1">
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}

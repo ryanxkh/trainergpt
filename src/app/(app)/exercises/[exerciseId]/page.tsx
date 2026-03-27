@@ -123,8 +123,8 @@ function PerformanceSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-6 w-48" />
-      <Skeleton className="h-[280px] w-full rounded-lg" />
-      <Skeleton className="h-40 w-full rounded-lg" />
+      <Skeleton className="h-[280px] w-full rounded-xl" />
+      <Skeleton className="h-40 w-full rounded-xl" />
     </div>
   );
 }
@@ -139,10 +139,10 @@ function ExerciseDetailSkeleton() {
         <Skeleton className="h-6 w-16" />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
       </div>
     </div>
   );
@@ -201,7 +201,7 @@ async function ExerciseContent({ params }: Props) {
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground uppercase tracking-wide">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             {exercise.equipment}
           </p>
         </div>
@@ -217,7 +217,7 @@ async function ExerciseContent({ params }: Props) {
         </div>
         {exercise.muscleGroups.secondary.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wide mr-1">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">
               Secondary:
             </span>
             {exercise.muscleGroups.secondary.map((mg) => (
@@ -231,7 +231,7 @@ async function ExerciseContent({ params }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Movement
             </p>
             <p className="text-sm font-medium capitalize mt-0.5">
@@ -241,7 +241,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Optimal Reps
             </p>
             <p className="text-sm font-medium tabular-nums mt-0.5">
@@ -252,7 +252,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Rest Time
             </p>
             <p className="text-sm font-medium tabular-nums mt-0.5">
@@ -266,7 +266,7 @@ async function ExerciseContent({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Equipment
             </p>
             <p className="text-sm font-medium capitalize mt-0.5">
@@ -281,7 +281,7 @@ async function ExerciseContent({ params }: Props) {
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Stimulus-to-Fatigue Ratio
               </p>
               <p className="text-sm font-medium capitalize mt-0.5">

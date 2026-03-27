@@ -38,88 +38,115 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Geist radius scale: 6px small, 12px medium, 16px large */
+  --radius-sm: 0.25rem;       /* 4px — fine details */
+  --radius-md: 0.375rem;      /* 6px — Geist small (buttons, inputs, badges) */
+  --radius-lg: var(--radius); /* 12px — Geist medium (base) */
+  --radius-xl: 0.75rem;       /* 12px — Geist medium (cards, sheets, dialogs) */
+  --radius-2xl: 1rem;         /* 16px — Geist large (fullscreen containers) */
+  --radius-3xl: 1.5rem;       /* 24px */
+  --radius-4xl: 2rem;         /* 32px */
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --primary: #0a0a0a;
-  --primary-foreground: #fafafa;
-  --secondary: #fafafa;
-  --secondary-foreground: #0a0a0a;
-  --muted: #fafafa;
-  --muted-foreground: #737373;
-  --accent: #f5f5f5;
-  --accent-foreground: #0a0a0a;
-  --destructive: #ee0000;
-  --border: #eaeaea;
-  --input: #eaeaea;
-  --ring: #0a0a0a;
-  --chart-1: #0070f3;
-  --chart-2: #00a67e;
-  --chart-3: #f5a623;
-  --chart-4: #ee0000;
-  --chart-5: #7928ca;
-  --sidebar: #fafafa;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #0a0a0a;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #f5f5f5;
-  --sidebar-accent-foreground: #0a0a0a;
-  --sidebar-border: #eaeaea;
-  --sidebar-ring: #0a0a0a;
-  --shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.12);
-  --shadow-medium: 0px 4px 8px rgba(0, 0, 0, 0.12);
-  --shadow-large: 0px 8px 24px rgba(0, 0, 0, 0.12);
+  --radius: 0.75rem;
+
+  /* ─── Geist Color System (Light Mode) ───────────────────────────────
+     Mapped from Geist's --ds-gray-* semantic scale:
+       100=background  200=hover bg  300=active bg  400=border
+       500-600=secondary text  700-900=primary text  1000=foreground
+     See docs/geist-design-system-reference.md for full token reference. */
+
+  --background: #ffffff;             /* Geist --ds-background-100 */
+  --foreground: #0a0a0a;             /* Geist --ds-gray-1000 */
+  --card: #ffffff;                   /* Geist --ds-background-100 */
+  --card-foreground: #0a0a0a;        /* Geist --ds-gray-1000 */
+  --popover: #ffffff;                /* Geist --ds-background-100 */
+  --popover-foreground: #0a0a0a;     /* Geist --ds-gray-1000 */
+  --primary: #0a0a0a;                /* Geist --ds-gray-1000 (dark CTA) */
+  --primary-foreground: #fafafa;     /* Geist --ds-gray-100 */
+  --secondary: #fafafa;              /* Geist --ds-gray-100 */
+  --secondary-foreground: #0a0a0a;   /* Geist --ds-gray-1000 */
+  --muted: #fafafa;                  /* Geist --ds-gray-100 */
+  --muted-foreground: #737373;       /* Geist --ds-gray-900 */
+  --accent: #f5f5f5;                 /* Geist --ds-gray-200 */
+  --accent-foreground: #0a0a0a;      /* Geist --ds-gray-1000 */
+  --destructive: #ee0000;            /* Geist --ds-red-900 */
+  --border: #eaeaea;                 /* Geist --ds-gray-400 */
+  --input: #eaeaea;                  /* Geist --ds-gray-400 */
+  --ring: #0a0a0a;                   /* Geist --ds-gray-1000 */
+
+  /* Chart colors — Geist semantic accent scales */
+  --chart-1: #0070f3;                /* Geist --ds-blue-900 */
+  --chart-2: #00a67e;                /* Geist --ds-green-900 */
+  --chart-3: #f5a623;                /* Geist --ds-amber-900 */
+  --chart-4: #ee0000;                /* Geist --ds-red-900 */
+  --chart-5: #7928ca;                /* Geist --ds-purple-900 */
+
+  /* Sidebar — mirrors main surface tokens */
+  --sidebar: #fafafa;                /* Geist --ds-gray-100 */
+  --sidebar-foreground: #0a0a0a;     /* Geist --ds-gray-1000 */
+  --sidebar-primary: #0a0a0a;        /* Geist --ds-gray-1000 */
+  --sidebar-primary-foreground: #fafafa; /* Geist --ds-gray-100 */
+  --sidebar-accent: #f5f5f5;         /* Geist --ds-gray-200 */
+  --sidebar-accent-foreground: #0a0a0a;  /* Geist --ds-gray-1000 */
+  --sidebar-border: #eaeaea;         /* Geist --ds-gray-400 */
+  --sidebar-ring: #0a0a0a;           /* Geist --ds-gray-1000 */
+
+  /* ─── Geist Shadow System ───────────────────────────────────────────
+     Two-layer shadows matching Geist's material elevation tokens.
+     small=base/small material  medium=menu/modal  large=fullscreen */
+  --shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.04), 0px 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0px 2px 4px rgba(0, 0, 0, 0.04), 0px 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-large: 0px 4px 8px rgba(0, 0, 0, 0.04), 0px 8px 16px rgba(0, 0, 0, 0.08);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #ededed;
-  --card: #111111;
-  --card-foreground: #ededed;
-  --popover: #111111;
-  --popover-foreground: #ededed;
-  --primary: #ededed;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ededed;
-  --muted: #111111;
-  --muted-foreground: #888888;
-  --accent: #1a1a1a;
-  --accent-foreground: #ededed;
-  --destructive: #ee0000;
-  --border: #333333;
-  --input: #333333;
-  --ring: #ededed;
-  --chart-1: #0070f3;
-  --chart-2: #00a67e;
-  --chart-3: #f5a623;
-  --chart-4: #ee0000;
-  --chart-5: #7928ca;
-  --sidebar: #000000;
-  --sidebar-foreground: #ededed;
-  --sidebar-primary: #ededed;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ededed;
-  --sidebar-border: #333333;
-  --sidebar-ring: #ededed;
-  --shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-medium: 0px 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-large: 0px 8px 24px rgba(0, 0, 0, 0.3);
+  /* ─── Geist Color System (Dark Mode) ──────────────────────────────
+     Inverted scale: gray-100=#111, gray-200=#1a1a1a, gray-400=#333,
+     gray-900=#888, gray-1000=#ededed. Background is pure black. */
+
+  --background: #000000;             /* Geist dark --ds-background-100 */
+  --foreground: #ededed;             /* Geist dark --ds-gray-1000 */
+  --card: #111111;                   /* Geist dark --ds-gray-100 */
+  --card-foreground: #ededed;        /* Geist dark --ds-gray-1000 */
+  --popover: #111111;                /* Geist dark --ds-gray-100 */
+  --popover-foreground: #ededed;     /* Geist dark --ds-gray-1000 */
+  --primary: #ededed;                /* Geist dark --ds-gray-1000 */
+  --primary-foreground: #0a0a0a;     /* Geist light --ds-gray-1000 */
+  --secondary: #1a1a1a;              /* Geist dark --ds-gray-200 */
+  --secondary-foreground: #ededed;   /* Geist dark --ds-gray-1000 */
+  --muted: #111111;                  /* Geist dark --ds-gray-100 */
+  --muted-foreground: #888888;       /* Geist dark --ds-gray-900 */
+  --accent: #1a1a1a;                 /* Geist dark --ds-gray-200 */
+  --accent-foreground: #ededed;      /* Geist dark --ds-gray-1000 */
+  --destructive: #ee0000;            /* Geist --ds-red-900 */
+  --border: #333333;                 /* Geist dark --ds-gray-400 */
+  --input: #333333;                  /* Geist dark --ds-gray-400 */
+  --ring: #ededed;                   /* Geist dark --ds-gray-1000 */
+
+  /* Chart colors — same across themes */
+  --chart-1: #0070f3;                /* Geist --ds-blue-900 */
+  --chart-2: #00a67e;                /* Geist --ds-green-900 */
+  --chart-3: #f5a623;                /* Geist --ds-amber-900 */
+  --chart-4: #ee0000;                /* Geist --ds-red-900 */
+  --chart-5: #7928ca;                /* Geist --ds-purple-900 */
+
+  /* Sidebar — mirrors main dark surface tokens */
+  --sidebar: #000000;                /* Geist dark --ds-background-100 */
+  --sidebar-foreground: #ededed;     /* Geist dark --ds-gray-1000 */
+  --sidebar-primary: #ededed;        /* Geist dark --ds-gray-1000 */
+  --sidebar-primary-foreground: #0a0a0a; /* Geist light --ds-gray-1000 */
+  --sidebar-accent: #1a1a1a;         /* Geist dark --ds-gray-200 */
+  --sidebar-accent-foreground: #ededed;  /* Geist dark --ds-gray-1000 */
+  --sidebar-border: #333333;         /* Geist dark --ds-gray-400 */
+  --sidebar-ring: #ededed;           /* Geist dark --ds-gray-1000 */
+
+  /* ─── Geist Shadow System (Dark) ────────────────────────────────────
+     Higher opacity for visibility on dark backgrounds. */
+  --shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-medium: 0px 2px 4px rgba(0, 0, 0, 0.15), 0px 4px 8px rgba(0, 0, 0, 0.20);
+  --shadow-large: 0px 4px 8px rgba(0, 0, 0, 0.15), 0px 8px 16px rgba(0, 0, 0, 0.25);
 }
 
 @layer base {

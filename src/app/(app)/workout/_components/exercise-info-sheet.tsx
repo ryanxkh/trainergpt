@@ -55,7 +55,7 @@ export function ExerciseInfoSheet({
         <div className="px-4 space-y-4 pb-2">
           {/* Muscle groups */}
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Primary Muscles
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -65,7 +65,7 @@ export function ExerciseInfoSheet({
             </div>
             {detail.muscleGroups.secondary.length > 0 && (
               <>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mt-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-3">
                   Secondary Muscles
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -102,7 +102,7 @@ export function ExerciseInfoSheet({
           </div>
 
           {/* SFR Rating */}
-          <div className="rounded-lg border p-3 space-y-1">
+          <div className="rounded-xl border p-3 space-y-1">
             <div className="flex items-center gap-2">
               <Flame className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">
@@ -114,7 +114,7 @@ export function ExerciseInfoSheet({
 
           {/* Stretch-focused */}
           {detail.isStretchFocused && (
-            <div className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+            <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 p-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
@@ -142,10 +142,10 @@ function InfoItem({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border p-2.5 space-y-1">
+    <div className="rounded-xl border p-2.5 space-y-1">
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {icon}
-        <span className="text-[11px] font-medium uppercase tracking-wide">
+        <span className="text-xs font-semibold uppercase tracking-wider">
           {label}
         </span>
       </div>

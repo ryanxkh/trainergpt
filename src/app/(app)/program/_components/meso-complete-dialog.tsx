@@ -85,7 +85,7 @@ export function MesoCompleteDialog({
                   <p>
                     You just finished <strong>{mesoName}</strong>. Nice work.
                   </p>
-                  <div className="rounded-lg bg-muted p-3 text-xs text-foreground space-y-2">
+                  <div className="rounded-xl bg-muted p-3 text-xs text-foreground space-y-2">
                     <p className="font-semibold">What is a deload?</p>
                     <p>
                       A deload is a planned low-intensity week (50% volume, higher
@@ -140,7 +140,7 @@ export function MesoCompleteDialog({
                   <p>
                     Ready for another round of <strong>{mesoName}</strong>?
                   </p>
-                  <div className="rounded-lg bg-muted p-3 text-xs text-foreground space-y-2">
+                  <div className="rounded-xl bg-muted p-3 text-xs text-foreground space-y-2">
                     <p className="font-semibold">Same exercises, progressive overload</p>
                     <p>
                       Your exercises carry forward (including any swaps you made).

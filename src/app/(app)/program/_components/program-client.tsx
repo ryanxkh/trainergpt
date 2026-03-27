@@ -4,6 +4,7 @@ import { useState, useMemo, useTransition } from "react";
 import { Calendar, MessageSquare, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusDot } from "@/components/ui/status-dot";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -218,7 +219,7 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
               {sessions.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between rounded-lg border bg-card px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border bg-card px-4 py-3"
                 >
                   <div>
                     <span className="text-sm font-medium">{s.sessionName}</span>
@@ -226,12 +227,14 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
                       {s.prescribedExercises?.length ?? 0} exercises
                     </span>
                   </div>
-                  <Badge
-                    variant={s.status === "completed" ? "secondary" : "outline"}
-                    className="text-[10px] capitalize"
-                  >
-                    {s.status}
-                  </Badge>
+                  <StatusDot
+                    state={
+                      (["active", "completed", "planned", "abandoned"].includes(s.status)
+                        ? s.status
+                        : "planned") as "active" | "completed" | "planned" | "abandoned"
+                    }
+                    label={s.status}
+                  />
                 </div>
               ))}
             </div>
@@ -239,7 +242,7 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
         )}
 
         {/* CTA to create a structured program */}
-        <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
+        <div className="rounded-xl border border-dashed p-6 text-center space-y-3">
           <p className="text-sm text-muted-foreground">
             This mesocycle was created without a structured session plan.
             Complete it and generate a new program to see the full grid with exercises, sets, and RIR targets.
@@ -328,7 +331,7 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
               key={week.weekNumber}
               onClick={() => setSelectedWeek(week.weekNumber)}
               className={`
-                shrink-0 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold transition-all active:scale-95
+                shrink-0 min-h-11 px-3 py-2 rounded-md text-xs font-semibold transition-all active:scale-95
                 ${isSelected
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : week.isCompleted
@@ -350,21 +353,12 @@ export function ProgramClient({ data, volumeLandmarks }: Props) {
 
       {/* Grid legend (desktop only) */}
       <div className="hidden md:flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm bg-green-100 dark:bg-green-900/40 ring-1 ring-green-200 dark:ring-green-800" />
-          Completed
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm bg-primary/15 ring-1 ring-primary/30" />
-          Active
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm bg-muted/60 ring-1 ring-border" />
-          Planned
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm bg-muted/30 ring-1 ring-border/50" />
-          Upcoming
+        <StatusDot state="completed" label="Completed" />
+        <StatusDot state="active" label="Active" />
+        <StatusDot state="planned" label="Planned" />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full shrink-0 bg-muted-foreground/20" />
+          <span className="text-xs text-muted-foreground capitalize">Upcoming</span>
         </span>
       </div>
 

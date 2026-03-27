@@ -28,10 +28,13 @@ export default function CoachClient() {
   const isError = status === "error";
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-trigger briefing on mount when there are no messages
+  // Auto-trigger briefing once per browser session (not on every navigation back)
   useEffect(() => {
     if (messages.length === 0 && !hasSentBriefing.current && status === "ready") {
+      const alreadySent = sessionStorage.getItem("coach-briefing-sent");
+      if (alreadySent) return;
       hasSentBriefing.current = true;
+      sessionStorage.setItem("coach-briefing-sent", "true");
       sendMessage({ text: "Hey coach, what's the plan?" });
     }
   }, [messages.length, status, sendMessage]);
@@ -56,6 +59,28 @@ export default function CoachClient() {
     <div className="flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-3rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-auto pb-4 min-h-0 -mx-4 px-4">
+        {messages.length === 0 && !isLoading && (
+          <div className="flex flex-col items-center justify-end h-full space-y-4 pb-6">
+            <div className="text-center space-y-2">
+              <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="text-lg font-medium">What can I help you with?</p>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center max-w-md px-4">
+              {QUICK_PROMPTS.map((prompt) => (
+                <Button
+                  key={prompt}
+                  variant="outline"
+                  onClick={() => handleQuickPrompt(prompt)}
+                  disabled={isLoading}
+                  className="min-h-11 h-auto px-4 py-2.5 text-sm font-medium"
+                >
+                  {prompt}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((message) => (
           <div
             key={message.id}

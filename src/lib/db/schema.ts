@@ -9,8 +9,10 @@ import {
   jsonb,
   real,
   pgEnum,
+  uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // Enums
 export const experienceLevelEnum = pgEnum("experience_level", [
@@ -111,7 +113,9 @@ export const mesocycles = pgTable("mesocycles", {
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex("one_active_mesocycle_per_user").on(table.userId).where(sql`${table.status} = 'active'`),
+]);
 
 // ─── Workout Sessions ───────────────────────────────────────────────
 
@@ -146,14 +150,16 @@ export const workoutSessions = pgTable("workout_sessions", {
   dayNumber: integer("day_number"), // 1=Mon..7=Sun, nullable for backward compat
   status: sessionStatusEnum("status").default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex("one_active_session_per_user").on(table.userId).where(sql`${table.status} = 'active'`),
+]);
 
 // ─── Exercise Sets ──────────────────────────────────────────────────
 
 export const exerciseSets = pgTable("exercise_sets", {
   id: serial("id").primaryKey(),
   sessionId: integer("session_id")
-    .references(() => workoutSessions.id)
+    .references(() => workoutSessions.id, { onDelete: "cascade" })
     .notNull(),
   exerciseId: integer("exercise_id")
     .references(() => exercises.id)
@@ -181,7 +187,9 @@ export const userVolumeLandmarks = pgTable("user_volume_landmarks", {
   mav: integer("mav").notNull(), // Maximum Adaptive Volume
   mrv: integer("mrv").notNull(), // Maximum Recoverable Volume
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  unique("unique_user_muscle_landmark").on(table.userId, table.muscleGroup),
+]);
 
 // ─── Relations ──────────────────────────────────────────────────────
 

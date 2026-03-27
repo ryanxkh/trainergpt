@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { mesocycles, workoutSessions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireUserId } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 import type { SessionPlan } from "@/lib/program-utils";
@@ -216,14 +216,14 @@ export async function completeMesocycle(
     .set({ status: "completed" })
     .where(eq(mesocycles.id, mesoId));
 
-  // Abandon any remaining planned/active sessions
+  // Abandon any remaining planned or active sessions
   await db
     .update(workoutSessions)
     .set({ status: "abandoned" })
     .where(
       and(
         eq(workoutSessions.mesocycleId, mesoId),
-        eq(workoutSessions.status, "planned"),
+        inArray(workoutSessions.status, ["planned", "active"]),
       ),
     );
 

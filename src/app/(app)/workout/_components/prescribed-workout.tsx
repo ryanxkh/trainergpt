@@ -66,6 +66,35 @@ export default function PrescribedWorkout({
     {}
   );
 
+  // Offline backup — persist logged sets to localStorage in case of network loss
+  useEffect(() => {
+    if (loggedSets.length > 0) {
+      try {
+        localStorage.setItem(
+          `session-${sessionId}-sets`,
+          JSON.stringify(loggedSets)
+        );
+      } catch { /* localStorage full or unavailable */ }
+    }
+  }, [loggedSets, sessionId]);
+
+  // Restore from backup on mount if server has fewer sets (network failure recovery)
+  useEffect(() => {
+    try {
+      const backup = localStorage.getItem(`session-${sessionId}-sets`);
+      if (backup) {
+        const saved = JSON.parse(backup) as LoggedSet[];
+        if (saved.length > initialSets.length) {
+          setLoggedSets(saved);
+        } else {
+          // Server is up to date — clean up backup
+          localStorage.removeItem(`session-${sessionId}-sets`);
+        }
+      }
+    } catch { /* parse error or unavailable */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
   // Duration timer
   useEffect(() => {
     const start = new Date(sessionDate).getTime();
@@ -158,6 +187,7 @@ export default function PrescribedWorkout({
         durationMinutes,
       });
       if (result.success) {
+        try { localStorage.removeItem(`session-${sessionId}-sets`); } catch {}
         toast.success(
           `Workout complete! ${totalLogged} sets in ${durationMinutes} min`
         );
@@ -464,7 +494,7 @@ function ExerciseCard({
               ))}
             </div>
           )}
-          <h3 className="font-semibold text-base leading-tight">
+          <h3 className="font-semibold text-base leading-tight truncate">
             {exercise.exerciseName}
           </h3>
           {equipment && (

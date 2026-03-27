@@ -19,7 +19,7 @@ export function RestTimerBanner({
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors",
+        "sticky top-0 z-40 flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors",
         isDone
           ? "bg-green-500/15 border border-green-500/30 dark:bg-green-500/10"
           : "bg-blue-500/10 border border-blue-500/20 dark:bg-blue-500/[0.07]"

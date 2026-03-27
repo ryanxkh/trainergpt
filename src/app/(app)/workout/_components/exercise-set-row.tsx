@@ -79,6 +79,7 @@ export function CompletedSetRow({
           <Input
             type="number"
             inputMode="decimal"
+            autoFocus
             value={editWeight}
             onChange={(e) => setEditWeight(e.target.value)}
             className="h-11 flex-1 min-w-0 text-center font-semibold tabular-nums"

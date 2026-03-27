@@ -24,11 +24,11 @@ npx tsc --noEmit                         # Type check
 npx drizzle-kit generate                 # Generate migration from schema changes
 npx drizzle-kit migrate                  # Run pending migrations
 
-# Coach evals (17 scenarios, uses real Anthropic API)
-npm run eval                             # Run all 17 evals
+# Coach evals (18 scenarios, uses real Anthropic API)
+npm run eval                             # Run all 18 evals
 npm run eval:policy                      # Policy compliance only (5 scenarios)
 npm run eval:tools                       # Tool usage patterns (5 scenarios)
-npm run eval:edge                        # Edge cases (4 scenarios)
+npm run eval:edge                        # Edge cases (5 scenarios)
 npm run eval:comm                        # Communication quality (3 scenarios)
 npx tsx evals/runner.ts policy-001       # Run single scenario by ID
 
@@ -59,7 +59,9 @@ gh auth setup-git && git push
 | `src/lib/cache.ts` | Redis caching: volume, profile, exercises, weekly summary, deload |
 | `src/lib/db/schema.ts` | 6 Drizzle tables + relations |
 | `src/lib/db/index.ts` | Lazy DB connection via Proxy (builds work without env vars) |
-| `src/lib/flags.ts` | Feature flags (ai-model, advanced-coaching, progress-charts, workout-timer) |
+| `src/lib/flags.ts` | Feature flags (ai-model only; others shipped to all users) |
+| `src/components/ui/status-dot.tsx` | Geist-style StatusDot (active/completed/planned/abandoned/error/ready) |
+| `src/components/ui/loading-dots.tsx` | Geist-style LoadingDots (bouncing dots for typing indicators) |
 | `src/app/(app)/coach/_components/coach-client.tsx` | Chat UI using `useChat` |
 | `src/app/(app)/_components/mobile-nav.tsx` | Mobile bottom tab bar (4 tabs, active route indicator) |
 | `src/app/(app)/_components/sidebar-nav.tsx` | Desktop sidebar nav with active route highlighting |
@@ -78,24 +80,30 @@ gh auth setup-git && git push
 
 ```
 Client (useChat/sendMessage) → /api/chat POST
-  → convertToModelMessages(messages) → streamText with 7 tools
+  → Per-user rate limit (10/min) → generateSessionBriefing(userId)
+  → buildSystemPrompt({ sessionBriefing, advancedCoaching })
+  → convertToModelMessages(messages) → streamText with 11 tools
   → Tools query Neon via Drizzle, cache via Upstash Redis
   → result.toUIMessageStreamResponse() → streaming back to client
 ```
 
-### AI Chat Tools (7 total)
+### AI Chat Tools (11 total)
 
 1. `getUserProfile` — Profile, volume landmarks (MEV/MAV/MRV), active mesocycle, deload recommendation
 2. `getWorkoutHistory` — Per-session summaries (not raw sets) filtered by muscle group/exercise
 3. `getVolumeThisWeek` — Weekly volume with computed `status` and `setsRemaining` per muscle group
 4. `getProgressionTrend` — Per-session averages + recommendation for an exercise
-5. `getExerciseLibrary` — Search exercises, returns `{id, name, equipment}` only
+5. `getExerciseLibrary` — Search exercises by comma-separated muscleGroups, returns `{id, name, equipment}`
 6. `prescribeWorkout` — Creates session after validating exercise IDs + volume vs MRV
 7. `logWorkoutSet` — Logs a set to the active session (fuzzy exercise name match, supports setType)
+8. `completeWorkoutSession` — Marks session completed/abandoned with duration
+9. `updateUserProfile` — Updates experience level, training days, split, equipment (only on explicit request)
+10. `createProgram` — Generates full mesocycle with session plan, materializes week 1
+11. `advanceWeek` — Advances mesocycle to next week, materializes sessions
 
 ### System Prompt Structure (`src/lib/ai.ts`)
 
-The prompt uses XML sections: `<background_information>`, `<instructions>` (with HARD RULES), `<tool_guidance>`, `<output_format>`, `<edge_cases>`, `<examples>`. The `ADVANCED_COACHING_ADDENDUM` is toggled via the `enable-advanced-coaching` feature flag.
+The prompt uses XML sections: `<background_information>`, `<session_briefing>` (injected dynamically), `<instructions>` (6 hard rules including proactive coaching), `<tool_guidance>`, `<output_format>`, `<edge_cases>`, `<examples>`. Built via `buildSystemPrompt()` which accepts optional briefing XML and always includes the advanced coaching addendum.
 
 ### Session Briefing System (`src/lib/briefing.ts`)
 
@@ -113,7 +121,7 @@ const result = streamText({
   system: systemPrompt,
   messages: await convertToModelMessages(messages), // REQUIRED
   tools: { myTool: tool({ description: "...", inputSchema: z.object({...}), execute: async (input) => {...} }) },
-  stopWhen: stepCountIs(7),  // NOT maxSteps
+  stopWhen: stepCountIs(10),  // NOT maxSteps
 });
 return result.toUIMessageStreamResponse(); // NOT toDataStreamResponse
 
@@ -133,13 +141,20 @@ const { messages, sendMessage, status } = useChat();
 - **Next.js 16 cacheComponents**: `cacheComponents: true` replaces PPR. All async data access must be in `<Suspense>` or `"use cache"` functions. Page components should be sync.
 - **DB connection is lazy** via Proxy in `src/lib/db/index.ts` — builds succeed without `POSTGRES_URL`
 - **`edgeConfigAdapter()`** crashes without `EDGE_CONFIG` env var — `flags.ts` uses conditional `require()`
-- **exercises table** has NO unique constraint on name; `onConflictDoNothing` needs a unique target
-- **Volume cache** (`getCachedVolume`) counts ALL sets, not just hard sets (RIR ≤ 4) — known data integrity issue
+- **Volume cache** (`getCachedVolume`) correctly counts only hard sets (RIR ≤ 4) — verified in test suite
 - **`vercel env pull`** overwrites `.env.local` — add keys to Vercel dashboard instead
 
 ## Coach Agent Tuning
 
-The coach has been through a 3-phase tuning process (Audit → Eval → Improve). Current eval score: **16/17 (94%), 98% policy assertion rate**. The eval framework in `evals/` uses `generateText` with mock tools + a Haiku judge for natural language policy assertions. See `.claude/agents/coach-developer.md` for the specialized agent and full methodology.
+Current eval score: **18/18 (100%), 61/61 policy assertions (100%)**. The eval framework in `evals/` uses `generateText` with mock tools (including leg exercises) + a Haiku judge for natural language policy assertions. `getExerciseLibrary` accepts comma-separated `muscleGroups` for batching. Step limit is 10 (raised from 7 to support complex prescription flows).
+
+### Proactive Coaching
+
+The coach is proactive, not reactive. On first visit per browser session, the client auto-sends a trigger message. The session briefing (cached 10 min in Redis) provides the coach with volume status, progression flags, and a prioritized recommendation. Rule 6 in the system prompt instructs the coach to lead with its most actionable insight.
+
+### Security
+
+All server actions verify ownership (userId match) before mutations. DB has partial unique indexes preventing duplicate active sessions/mesocycles per user. Redis operations are wrapped in try/catch (fail-open). Per-user rate limiting (10 msg/min) on `/api/chat`. exercise_sets have CASCADE DELETE on session FK.
 
 ## Environment Variables
 
@@ -172,4 +187,4 @@ Use data source ID `60257600-8325-42d2-8500-5c9c7ee71bbb` when creating rows. Up
 **At the start of every session**, fetch this page via the Notion MCP (`mcp__plugin_Notion_notion__notion-fetch`) and check for new content. If there are new notes or screenshots:
 1. Discuss them with Ryan to understand context and intent
 2. Triage into actionable work — create tasks on the SLC Tracker board, fix bugs directly, or flag for discussion
-3. After processing, move the handled notes into a "Processed" toggle or clear them so the page stays clean for the next dump
+3. After processing, delete the handled notes from the page entirely — SLC Tracker + git history are the record. Keep the page clean for the next dump.

@@ -23,6 +23,15 @@ import {
 } from "@/lib/cache";
 import { aiModel } from "@/lib/flags";
 import { revalidatePath } from "next/cache";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+// Per-user rate limit: 10 messages per minute (separate from IP-based middleware limit)
+const userRatelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix: "rl:chat:user",
+});
 import { getVolumeLandmarksByLevel } from "@/lib/volume-landmarks";
 import {
   generateMesocyclePlan,
@@ -33,6 +42,16 @@ import type { SessionPlan } from "@/lib/program-utils";
 
 export async function POST(req: Request) {
   const userId = await requireUserId();
+
+  // Per-user rate limit (prevents cost abuse)
+  try {
+    const { success } = await userRatelimit.limit(userId.toString());
+    if (!success) {
+      return new Response("Slow down — too many messages. Try again in a minute.", { status: 429 });
+    }
+  } catch {
+    // Redis unavailable — allow through
+  }
 
   // Feature flag — model selection resolved from Edge Config (no redeploy needed)
   const modelId = await aiModel();

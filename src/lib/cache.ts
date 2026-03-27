@@ -51,8 +51,12 @@ export type VolumeData = {
 };
 
 export async function getCachedVolume(userId: number): Promise<VolumeData> {
-  const cached = await redis.get<VolumeData>(volumeKey(userId));
-  if (cached) return cached;
+  try {
+    const cached = await redis.get<VolumeData>(volumeKey(userId));
+    if (cached) return cached;
+  } catch {
+    // Redis unavailable — fall through to DB
+  }
 
   // Cache miss — query DB
   const now = new Date();
@@ -102,7 +106,7 @@ export async function getCachedVolume(userId: number): Promise<VolumeData> {
     weekStart: monday.toISOString(),
   };
 
-  await redis.set(volumeKey(userId), data, { ex: TTL.volume });
+  try { await redis.set(volumeKey(userId), data, { ex: TTL.volume }); } catch { /* Redis write failed — non-critical */ }
   return data;
 }
 
@@ -129,8 +133,12 @@ export type ProfileData = {
 };
 
 export async function getCachedProfile(userId: number): Promise<ProfileData | null> {
-  const cached = await redis.get<ProfileData>(profileKey(userId));
-  if (cached) return cached;
+  try {
+    const cached = await redis.get<ProfileData>(profileKey(userId));
+    if (cached) return cached;
+  } catch {
+    // Redis unavailable — fall through to DB
+  }
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
@@ -174,7 +182,7 @@ export async function getCachedProfile(userId: number): Promise<ProfileData | nu
       : null,
   };
 
-  await redis.set(profileKey(userId), data, { ex: TTL.profile });
+  try { await redis.set(profileKey(userId), data, { ex: TTL.profile }); } catch { /* Redis write failed */ }
   return data;
 }
 
@@ -186,15 +194,19 @@ export async function getCachedExercises(userId?: number) {
     ? `${exerciseListKey()}:${userId}`
     : exerciseListKey();
 
-  const cached = await redis.get<Array<{
-    id: number;
-    name: string;
-    muscleGroups: { primary: string[]; secondary: string[] };
-    movementPattern: string;
-    equipment: string;
-    isCustom: boolean;
-  }>>(cacheKey);
-  if (cached) return cached;
+  try {
+    const cached = await redis.get<Array<{
+      id: number;
+      name: string;
+      muscleGroups: { primary: string[]; secondary: string[] };
+      movementPattern: string;
+      equipment: string;
+      isCustom: boolean;
+    }>>(cacheKey);
+    if (cached) return cached;
+  } catch {
+    // Redis unavailable — fall through to DB
+  }
 
   const conditions = userId
     ? or(isNull(exercises.userId), eq(exercises.userId, userId))
@@ -212,7 +224,7 @@ export async function getCachedExercises(userId?: number) {
     isCustom: e.userId !== null,
   }));
 
-  await redis.set(cacheKey, simplified, { ex: TTL.exercises });
+  try { await redis.set(cacheKey, simplified, { ex: TTL.exercises }); } catch { /* Redis write failed */ }
   return simplified;
 }
 
@@ -235,7 +247,7 @@ export type WeeklySummary = {
 };
 
 export async function getWeeklySummary(userId: number): Promise<WeeklySummary | null> {
-  return redis.get<WeeklySummary>(weeklySummaryKey(userId));
+  try { return await redis.get<WeeklySummary>(weeklySummaryKey(userId)); } catch { return null; }
 }
 
 export async function setWeeklySummary(userId: number, data: WeeklySummary) {
@@ -253,7 +265,7 @@ export type DeloadRecommendation = {
 };
 
 export async function getDeloadRecommendation(userId: number): Promise<DeloadRecommendation | null> {
-  return redis.get<DeloadRecommendation>(deloadKey(userId));
+  try { return await redis.get<DeloadRecommendation>(deloadKey(userId)); } catch { return null; }
 }
 
 export async function setDeloadRecommendation(userId: number, data: DeloadRecommendation) {
@@ -283,6 +295,6 @@ export async function invalidateCache(
 
   const toDelete = keys.map((k) => keyMap[k]);
   if (toDelete.length > 0) {
-    await redis.del(...toDelete);
+    try { await redis.del(...toDelete); } catch { /* Redis unavailable — cache will expire via TTL */ }
   }
 }

@@ -68,6 +68,19 @@ export async function logSet(
 ): Promise<ActionResult<typeof exerciseSets.$inferSelect>> {
   try {
     const userId = await requireUserId();
+
+    // Verify session belongs to user and is active
+    const session = await db.query.workoutSessions.findFirst({
+      where: and(
+        eq(workoutSessions.id, sessionId),
+        eq(workoutSessions.userId, userId),
+        eq(workoutSessions.status, "active"),
+      ),
+    });
+    if (!session) {
+      return { success: false, error: "Session not found or not active" };
+    }
+
     const [set] = await db
       .insert(exerciseSets)
       .values({
@@ -95,6 +108,16 @@ export async function logSet(
 export async function deleteSet(setId: number): Promise<ActionResult<null>> {
   try {
     const userId = await requireUserId();
+
+    // Verify ownership via session relationship
+    const set = await db.query.exerciseSets.findFirst({
+      where: eq(exerciseSets.id, setId),
+      with: { session: true },
+    });
+    if (!set || set.session.userId !== userId) {
+      return { success: false, error: "Set not found" };
+    }
+
     await db.delete(exerciseSets).where(eq(exerciseSets.id, setId));
     revalidatePath("/workout");
     await invalidateCache(userId, ["volume"]);
@@ -120,8 +143,17 @@ export async function completeWorkout(
         durationMinutes: data.durationMinutes ?? null,
         status: "completed",
       })
-      .where(eq(workoutSessions.id, sessionId))
+      .where(
+        and(
+          eq(workoutSessions.id, sessionId),
+          eq(workoutSessions.userId, userId),
+        )
+      )
       .returning();
+
+    if (!session) {
+      return { success: false, error: "Session not found" };
+    }
 
     revalidatePath("/workout");
     revalidatePath("/history");
@@ -316,9 +348,12 @@ export async function replaceExercise(
       return { success: false, error: "Exercise not found" };
     }
 
-    // Fetch session to get prescribed exercises
+    // Fetch session — verify ownership
     const session = await db.query.workoutSessions.findFirst({
-      where: eq(workoutSessions.id, sessionId),
+      where: and(
+        eq(workoutSessions.id, sessionId),
+        eq(workoutSessions.userId, userId),
+      ),
     });
     if (!session || !session.prescribedExercises) {
       return { success: false, error: "Session not found" };

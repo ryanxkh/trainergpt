@@ -15,14 +15,18 @@ export default auth(async (req) => {
 
   // Rate limit the AI chat endpoint
   if (pathname === "/api/chat") {
-    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    const { success, remaining } = await ratelimit.limit(ip);
+    try {
+      const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+      const { success, remaining } = await ratelimit.limit(ip);
 
-    if (!success) {
-      return new NextResponse("Too many requests. Please slow down.", {
-        status: 429,
-        headers: { "X-RateLimit-Remaining": remaining.toString() },
-      });
+      if (!success) {
+        return new NextResponse("Too many requests. Please slow down.", {
+          status: 429,
+          headers: { "X-RateLimit-Remaining": remaining.toString() },
+        });
+      }
+    } catch {
+      // Redis unavailable — allow request through rather than blocking all traffic
     }
   }
 

@@ -91,7 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain">
-        <div className="mx-auto max-w-3xl px-4 pt-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6">
+        <div className="mx-auto max-w-3xl px-4 pt-3 pb-[calc(4rem+env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6">
           {children}
         </div>
       </main>

@@ -52,7 +52,7 @@ export default function CoachClient({ initialSuggestions = [] }: CoachClientProp
   const hasSuggestions = initialSuggestions.length > 0;
 
   return (
-    <div className="flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-3rem)] flex-col">
+    <div className="flex h-[calc(100dvh-4.75rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-3rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-auto pb-4 min-h-0 -mx-4 px-4">
         {messages.length === 0 && !isLoading && (

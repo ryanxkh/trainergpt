@@ -11,34 +11,27 @@ import { Dumbbell, User, Send, Check, ArrowRight, AlertCircle, RotateCcw, Square
 import { LoadingDots } from "@/components/ui/loading-dots";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import type { SuggestionCard } from "@/lib/coach-suggestions";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
-const QUICK_PROMPTS = [
+const FOLLOWUP_PROMPTS = [
   "What should I train today?",
   "Create a new program for me",
   "How's my volume looking this week?",
 ];
 
-export default function CoachClient() {
+type CoachClientProps = {
+  initialSuggestions?: SuggestionCard[];
+};
+
+export default function CoachClient({ initialSuggestions = [] }: CoachClientProps) {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, error, clearError, regenerate, stop } = useChat();
-  const hasSentBriefing = useRef(false);
 
   const isLoading = status === "streaming" || status === "submitted";
   const isError = status === "error";
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto-trigger briefing once per browser session (not on every navigation back)
-  useEffect(() => {
-    if (messages.length === 0 && !hasSentBriefing.current && status === "ready") {
-      const alreadySent = sessionStorage.getItem("coach-briefing-sent");
-      if (alreadySent) return;
-      hasSentBriefing.current = true;
-      sessionStorage.setItem("coach-briefing-sent", "true");
-      sendMessage({ text: "Hey coach, what's the plan?" });
-    }
-  }, [messages.length, status, sendMessage]);
 
   // Auto-scroll to bottom when messages change or during streaming
   useEffect(() => {
@@ -56,29 +49,61 @@ export default function CoachClient() {
     sendMessage({ text: prompt });
   };
 
+  const hasSuggestions = initialSuggestions.length > 0;
+
   return (
     <div className="flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-3rem)] flex-col">
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-auto pb-4 min-h-0 -mx-4 px-4">
         {messages.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-end h-full space-y-4 pb-6">
+          <div className="flex flex-col items-center justify-end h-full space-y-5 pb-4">
             <div className="text-center space-y-2">
-              <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+              <Avatar className="mx-auto flex h-12 w-12 items-center justify-center bg-primary text-primary-foreground">
+                <Dumbbell className="h-5 w-5" />
+              </Avatar>
               <p className="text-lg font-medium">What can I help you with?</p>
+              {hasSuggestions && (
+                <p className="text-xs text-muted-foreground">
+                  Tap a suggestion to get started.
+                </p>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md px-4">
-              {QUICK_PROMPTS.map((prompt) => (
-                <Button
-                  key={prompt}
-                  variant="outline"
-                  onClick={() => handleQuickPrompt(prompt)}
-                  disabled={isLoading}
-                  className="min-h-11 h-auto px-4 py-2.5 text-sm font-medium"
-                >
-                  {prompt}
-                </Button>
-              ))}
-            </div>
+            {hasSuggestions ? (
+              <div className="w-full max-w-md grid gap-2 px-1 sm:grid-cols-2">
+                {initialSuggestions.map((card) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => handleQuickPrompt(card.prompt)}
+                    disabled={isLoading}
+                    className="group flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    {card.badge && (
+                      <Badge variant="secondary" className="text-[10px] font-medium">
+                        {card.badge}
+                      </Badge>
+                    )}
+                    <span className="text-sm font-medium leading-snug">
+                      {card.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 justify-center max-w-md px-4">
+                {FOLLOWUP_PROMPTS.map((prompt) => (
+                  <Button
+                    key={prompt}
+                    variant="outline"
+                    onClick={() => handleQuickPrompt(prompt)}
+                    disabled={isLoading}
+                    className="min-h-11 h-auto px-4 py-2.5 text-sm font-medium"
+                  >
+                    {prompt}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -159,10 +184,10 @@ export default function CoachClient() {
               </div>
             </div>
           )}
-        {/* Quick prompts — show after coach's opening briefing (2 messages = user trigger + coach response) */}
+        {/* Follow-up prompts after the coach's first reply to a card */}
         {messages.length === 2 && !isLoading && (
           <div className="flex flex-wrap gap-2 justify-center py-2">
-            {QUICK_PROMPTS.map((prompt) => (
+            {FOLLOWUP_PROMPTS.map((prompt) => (
               <Button
                 key={prompt}
                 variant="outline"

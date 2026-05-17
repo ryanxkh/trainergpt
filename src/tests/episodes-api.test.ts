@@ -2,16 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "@/app/api/episodes/[id]/route";
 import { NextRequest } from "next/server";
 
-const mockFindFirst = vi.fn();
-const mockFindMany = vi.fn();
+const mockEpisodeFindFirst = vi.fn();
+const mockSpeakersFindMany = vi.fn();
+const mockSegmentsFindMany = vi.fn();
+const mockJobsFindFirst = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   db: {
     query: {
-      episodes: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
-      speakers: { findMany: (...args: unknown[]) => mockFindMany(...args) },
-      segments: { findMany: (...args: unknown[]) => mockFindMany(...args) },
-      jobs: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      episodes: { findFirst: (...args: unknown[]) => mockEpisodeFindFirst(...args) },
+      speakers: { findMany: (...args: unknown[]) => mockSpeakersFindMany(...args) },
+      segments: { findMany: (...args: unknown[]) => mockSegmentsFindMany(...args) },
+      jobs: { findFirst: (...args: unknown[]) => mockJobsFindFirst(...args) },
     },
   },
 }));
@@ -65,7 +67,7 @@ describe("GET /api/episodes/[id]", () => {
   });
 
   it("returns 404 for non-existent episode", async () => {
-    mockFindFirst.mockResolvedValueOnce(undefined);
+    mockEpisodeFindFirst.mockResolvedValueOnce(undefined);
 
     const { req, params } = makeRequest("nonexistent");
     const res = await GET(req, { params });
@@ -76,14 +78,10 @@ describe("GET /api/episodes/[id]", () => {
   });
 
   it("returns full episode data with speakers, segments, and job", async () => {
-    // First findFirst = episode lookup
-    mockFindFirst.mockResolvedValueOnce(EPISODE);
-    // findMany calls: speakers, then segments
-    mockFindMany
-      .mockResolvedValueOnce(SPEAKERS)
-      .mockResolvedValueOnce(SEGMENTS);
-    // Second findFirst = latest job
-    mockFindFirst.mockResolvedValueOnce(JOB);
+    mockEpisodeFindFirst.mockResolvedValueOnce(EPISODE);
+    mockSpeakersFindMany.mockResolvedValueOnce(SPEAKERS);
+    mockSegmentsFindMany.mockResolvedValueOnce(SEGMENTS);
+    mockJobsFindFirst.mockResolvedValueOnce(JOB);
 
     const { req, params } = makeRequest("ep_abc123");
     const res = await GET(req, { params });
@@ -131,11 +129,10 @@ describe("GET /api/episodes/[id]", () => {
   });
 
   it("returns null job when no jobs exist", async () => {
-    mockFindFirst.mockResolvedValueOnce(EPISODE);
-    mockFindMany
-      .mockResolvedValueOnce(SPEAKERS)
-      .mockResolvedValueOnce([]);
-    mockFindFirst.mockResolvedValueOnce(undefined);
+    mockEpisodeFindFirst.mockResolvedValueOnce(EPISODE);
+    mockSpeakersFindMany.mockResolvedValueOnce(SPEAKERS);
+    mockSegmentsFindMany.mockResolvedValueOnce([]);
+    mockJobsFindFirst.mockResolvedValueOnce(undefined);
 
     const { req, params } = makeRequest("ep_abc123");
     const res = await GET(req, { params });
@@ -147,7 +144,7 @@ describe("GET /api/episodes/[id]", () => {
   });
 
   it("returns 500 on database error", async () => {
-    mockFindFirst.mockRejectedValueOnce(new Error("DB connection failed"));
+    mockEpisodeFindFirst.mockRejectedValueOnce(new Error("DB connection failed"));
 
     const { req, params } = makeRequest("ep_abc123");
     const res = await GET(req, { params });
@@ -158,13 +155,12 @@ describe("GET /api/episodes/[id]", () => {
   });
 
   it("maps speaker_id to speaker label and name in segments", async () => {
-    mockFindFirst.mockResolvedValueOnce(EPISODE);
-    mockFindMany
-      .mockResolvedValueOnce(SPEAKERS)
-      .mockResolvedValueOnce([
-        { id: "seg_x", episodeId: "ep_abc123", speakerId: "sp_2", startMs: 0, endMs: 1000, text: "Test", seq: 0 },
-      ]);
-    mockFindFirst.mockResolvedValueOnce(undefined);
+    mockEpisodeFindFirst.mockResolvedValueOnce(EPISODE);
+    mockSpeakersFindMany.mockResolvedValueOnce(SPEAKERS);
+    mockSegmentsFindMany.mockResolvedValueOnce([
+      { id: "seg_x", episodeId: "ep_abc123", speakerId: "sp_2", startMs: 0, endMs: 1000, text: "Test", seq: 0 },
+    ]);
+    mockJobsFindFirst.mockResolvedValueOnce(undefined);
 
     const { req, params } = makeRequest("ep_abc123");
     const res = await GET(req, { params });

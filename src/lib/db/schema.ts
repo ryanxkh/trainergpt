@@ -11,8 +11,11 @@ import {
   pgEnum,
   uniqueIndex,
   unique,
+  index,
+  customType,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 // Enums
 export const experienceLevelEnum = pgEnum("experience_level", [
@@ -242,3 +245,113 @@ export const userVolumeLandmarksRelations = relations(
     }),
   })
 );
+
+// ─── pod2md: tsvector custom type ─────────────────────────────────
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
+// ─── pod2md: Episodes ─────────────────────────────────────────────
+
+export const episodes = pgTable("episodes", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  sourceUrl: text("source_url").notNull().unique(),
+  audioUrl: text("audio_url"),
+  title: text("title").notNull(),
+  description: text("description"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  durationSecs: integer("duration_secs"),
+  transcriptMd: text("transcript_md"),
+  searchVector: tsvector("search_vector"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ─── pod2md: Speakers ─────────────────────────────────────────────
+
+export const speakers = pgTable("speakers", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  episodeId: text("episode_id")
+    .references(() => episodes.id, { onDelete: "cascade" })
+    .notNull(),
+  label: text("label").notNull(),
+  name: text("name").notNull(),
+  confidence: text("confidence"),
+}, (table) => [
+  unique("unique_episode_speaker_label").on(table.episodeId, table.label),
+  index("idx_speakers_episode_id").on(table.episodeId),
+]);
+
+// ─── pod2md: Segments ─────────────────────────────────────────────
+
+export const segments = pgTable("segments", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  episodeId: text("episode_id")
+    .references(() => episodes.id, { onDelete: "cascade" })
+    .notNull(),
+  speakerId: text("speaker_id")
+    .references(() => speakers.id)
+    .notNull(),
+  startMs: integer("start_ms").notNull(),
+  endMs: integer("end_ms").notNull(),
+  text: text("text").notNull(),
+  seq: integer("seq").notNull(),
+}, (table) => [
+  index("idx_segments_episode_seq").on(table.episodeId, table.seq),
+]);
+
+// ─── pod2md: Jobs ─────────────────────────────────────────────────
+
+export const jobs = pgTable("jobs", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  episodeId: text("episode_id")
+    .references(() => episodes.id, { onDelete: "cascade" })
+    .notNull(),
+  batchId: text("batch_id"),
+  runpodId: text("runpod_id"),
+  status: text("status").notNull().default("queued"),
+  progress: integer("progress").default(0),
+  errorMessage: text("error_message"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_jobs_status").on(table.status),
+]);
+
+// ─── pod2md: Relations ────────────────────────────────────────────
+
+export const episodesRelations = relations(episodes, ({ many }) => ({
+  speakers: many(speakers),
+  segments: many(segments),
+  jobs: many(jobs),
+}));
+
+export const speakersRelations = relations(speakers, ({ one, many }) => ({
+  episode: one(episodes, {
+    fields: [speakers.episodeId],
+    references: [episodes.id],
+  }),
+  segments: many(segments),
+}));
+
+export const segmentsRelations = relations(segments, ({ one }) => ({
+  episode: one(episodes, {
+    fields: [segments.episodeId],
+    references: [episodes.id],
+  }),
+  speaker: one(speakers, {
+    fields: [segments.speakerId],
+    references: [speakers.id],
+  }),
+}));
+
+export const jobsRelations = relations(jobs, ({ one }) => ({
+  episode: one(episodes, {
+    fields: [jobs.episodeId],
+    references: [episodes.id],
+  }),
+}));
